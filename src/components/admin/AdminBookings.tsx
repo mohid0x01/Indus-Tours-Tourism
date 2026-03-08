@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { logAdminAction } from '@/lib/activityLogger';
+import logo from '@/assets/indus-tours-logo.jpeg';
 import { Check, X, Loader2, Eye, Search, Trash2, Download, Tag, Printer, Edit, Undo, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
