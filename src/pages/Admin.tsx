@@ -92,6 +92,7 @@ export default function Admin() {
       case 'hotels': return <AdminHotels />;
       case 'deals': return <AdminDeals />;
       case 'feedback': return <AdminFeedback />;
+      case 'contact': return <AdminContactMessages />;
       case 'users': return <AdminUsers />;
       case 'notifications': return <AdminNotifications />;
       case 'visitors': return <AdminVisitors />;
