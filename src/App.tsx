@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import WhatsAppButton from "@/components/common/WhatsAppButton";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import Index from "./pages/Index";
 import Destinations from "./pages/Destinations";
 import Tours from "./pages/Tours";
