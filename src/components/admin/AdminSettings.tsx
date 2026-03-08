@@ -31,6 +31,41 @@ export default function AdminSettings() {
     setIsChangingPassword(false);
   };
 
+  const handleMegaExport = async () => {
+    setIsExporting(true);
+    toast({ title: 'Exporting...', description: 'Fetching all data. This may take a moment.' });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-export`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Export failed');
+      }
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `indus-tours-full-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Export Complete', description: 'All data downloaded successfully.' });
+    } catch (err) {
+      toast({ title: 'Export Failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    }
+    setIsExporting(false);
+  };
+
   return (
     <div className="space-y-4 max-w-3xl">
       {/* Account */}
