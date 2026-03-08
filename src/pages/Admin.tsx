@@ -65,6 +65,12 @@ export default function Admin() {
   // Initialize admin session auto-logout
   useAdminSession();
 
+  // Log admin page visits
+  useEffect(() => {
+    if (user && isAdmin) {
+      logAdminAction('page_visit', 'admin', undefined, { section: activeMenu });
+    }
+  }, [activeMenu, user, isAdmin]);
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
