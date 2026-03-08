@@ -25,13 +25,13 @@ export default function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const { error } = await supabase.from('contact_messages').insert({
+    const { error } = await supabase.from('contact_messages').insert([{
       name: formData.name,
       email: formData.email,
       phone: formData.phone || null,
       subject: formData.subject,
       message: formData.message,
-    } as Record<string, unknown>);
+    }] as any);
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to send message. Please try again.', variant: 'destructive' });

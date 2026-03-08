@@ -55,7 +55,7 @@ const staggerChildren = {
 
 const childFade = {
   enter: { opacity: 0, y: 16 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.25 } },
 };
 
