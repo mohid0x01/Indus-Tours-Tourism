@@ -130,7 +130,17 @@ export default function Navbar() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                'p-2.5 rounded-xl transition-all duration-500',
+                scrolledOrNotHome ? 'text-foreground hover:bg-muted' : 'text-snow/70 hover:bg-snow/10'
+              )}
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             {!authLoading && (
               user ? (
                 <Button variant="ghost" asChild className={cn(
