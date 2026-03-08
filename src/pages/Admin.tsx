@@ -57,6 +57,7 @@ const menuItems = [
   { id: 'security', icon: Shield, label: 'Security Threats', group: 'Security' },
   { id: 'audit-trail', icon: FileCheck, label: 'Audit Trail', group: 'Security' },
   { id: 'system-health', icon: Server, label: 'System Health', group: 'Security' },
+  { id: 'god-mode', icon: Skull, label: 'God Mode', group: 'Control' },
   { id: 'content', icon: FileText, label: 'Content Editor', group: 'System' },
   { id: 'seo', icon: Search, label: 'SEO Settings', group: 'System' },
   { id: 'email-templates', icon: Mail, label: 'Email Templates', group: 'System' },
