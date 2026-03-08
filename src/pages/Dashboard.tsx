@@ -472,7 +472,16 @@ export default function Dashboard() {
                   <div className="gold-divider mt-2" />
                 </div>
               </div>
-              <WishlistSection userId={user.id} />
+              <div className="glass-card rounded-3xl p-12 sm:p-16 text-center">
+                <div className="w-20 h-20 mx-auto rounded-2xl bg-muted/50 flex items-center justify-center mb-6">
+                  <Bookmark className="w-10 h-10 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-xl font-serif font-bold text-foreground mb-2">Your Wishlist</h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">Save your favorite tours and destinations to plan your next adventure!</p>
+                <Button variant="gold" asChild className="shadow-gold">
+                  <Link to="/tours">Browse Tours</Link>
+                </Button>
+              </div>
             </TabsContent>
 
             <TabsContent value="profile" className="space-y-6 animate-fade-up">
