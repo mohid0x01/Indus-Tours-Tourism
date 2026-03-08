@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Mail, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, User, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import logo from '@/assets/indus-tours-logo.jpeg';
@@ -21,12 +22,21 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     fullName: '',
   });
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     const {
@@ -167,6 +177,13 @@ export default function Auth() {
           return;
         }
 
+        // If Remember Me is checked, store preference
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberMe');
+        }
+
         toast({
           title: 'Welcome back!',
           description: 'You have successfully logged in.',
@@ -219,6 +236,15 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth status
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-mountain flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-mountain flex items-center justify-center p-4 sm:p-6">
@@ -346,7 +372,17 @@ export default function Auth() {
               </div>
 
               {isLogin && (
-                <div className="text-right">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    />
+                    <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer select-none">
+                      Remember me
+                    </label>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setIsForgotPassword(true)}
