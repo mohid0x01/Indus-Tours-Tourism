@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { logAdminAction } from '@/lib/activityLogger';
 import { Check, X, Loader2, Eye, Search, Trash2, Download, Tag, Printer, Edit, Undo, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
