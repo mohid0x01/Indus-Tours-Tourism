@@ -620,7 +620,7 @@ export default function AdminBookings() {
 
       {/* Edit Booking Modal - Full fields */}
       <Dialog open={!!editingBooking} onOpenChange={() => setEditingBooking(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto sm:max-h-[90vh] w-[calc(100vw-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>Edit Booking</DialogTitle>
           </DialogHeader>
