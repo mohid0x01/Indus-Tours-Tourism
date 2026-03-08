@@ -72,7 +72,7 @@ const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
               <img src={logo} alt="Indus Tours Logo" className="w-12 h-12 rounded-xl object-cover ring-2 ring-accent/20 shadow-gold" />
               <div>
                 <h3 className="font-serif font-bold text-xl">Indus Tours</h3>
-                <p className="text-[10px] text-snow/40 tracking-[0.2em] uppercase font-semibold">Pakistan</p>
+                <p className="text-[10px] text-snow/40 tracking-[0.15em] uppercase font-semibold">& Tourism</p>
               </div>
             </div>
             <p className="text-sm text-snow/50 leading-relaxed">
