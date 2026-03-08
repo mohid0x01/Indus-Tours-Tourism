@@ -86,9 +86,12 @@ export default function Gallery() {
           </div>
         ) : (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-            {filtered.map(photo => (
-              <div
+            {filtered.map((photo, index) => (
+              <motion.div
                 key={photo.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
                 onClick={() => setLightbox(photo)}
                 className="break-inside-avoid group cursor-pointer relative overflow-hidden rounded-xl"
               >
