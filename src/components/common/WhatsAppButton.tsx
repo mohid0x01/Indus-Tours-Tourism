@@ -2,8 +2,8 @@ import { MessageCircle } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteContent';
 
 export default function WhatsAppButton() {
-  const { content } = useSiteContent();
-  const whatsappNumber = (content?.whatsapp || '+923118088007').replace(/[^0-9+]/g, '');
+  const { data: content } = useSiteContent();
+  const whatsappNumber = ((content?.whatsapp as string) || '+923118088007').replace(/[^0-9+]/g, '');
   const cleanNumber = whatsappNumber.replace('+', '');
 
   return (
