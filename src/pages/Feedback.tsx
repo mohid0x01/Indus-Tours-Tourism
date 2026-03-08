@@ -171,7 +171,7 @@ export default function Feedback() {
               </form>
             </div>
           </div>
-        </div>
+            </motion.div>
       </section>
 
       <Footer />
