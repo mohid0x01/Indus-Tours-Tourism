@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Lock, Loader2, Shield, Database, Globe, Zap, Server, HardDrive, Key } from 'lucide-react';
+import { User, Lock, Loader2, Shield, Database, Globe, Zap, Server, HardDrive, Key, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
 
   const changePassword = async () => {
@@ -28,6 +29,41 @@ export default function AdminSettings() {
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Success', description: 'Password updated successfully' }); setPasswords({ new: '', confirm: '' }); }
     setIsChangingPassword(false);
+  };
+
+  const handleMegaExport = async () => {
+    setIsExporting(true);
+    toast({ title: 'Exporting...', description: 'Fetching all data. This may take a moment.' });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-export`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Export failed');
+      }
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `indus-tours-full-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Export Complete', description: 'All data downloaded successfully.' });
+    } catch (err) {
+      toast({ title: 'Export Failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    }
+    setIsExporting(false);
   };
 
   return (
@@ -119,6 +155,37 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* Mega Export */}
+      <Card className="border border-primary/20 bg-primary/[0.02]">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Download className="w-4 h-4 text-primary" />
+            </div>
+            Mega Export — Download Everything
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Export all data including bookings, users, tours, vehicles, hotels, deals, feedback, contact messages, 
+            blog posts, gallery, newsletter subscribers, activity logs, visitor logs, login attempts, banned IPs, 
+            user bans, sessions, loyalty points, referrals, abandoned bookings, and site settings as a single JSON file.
+          </p>
+          <Button 
+            onClick={handleMegaExport} 
+            disabled={isExporting} 
+            size="sm" 
+            className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20"
+          >
+            {isExporting ? (
+              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Exporting All Data...</>
+            ) : (
+              <><Download className="w-3.5 h-3.5 mr-1.5" /> Download Full Export (JSON)</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Danger */}
       <Card className="border border-destructive/10 bg-destructive/[0.02]">
         <CardHeader className="pb-3">
@@ -131,9 +198,6 @@ export default function AdminSettings() {
         </CardHeader>
         <CardContent>
           <p className="text-[11px] text-muted-foreground mb-3">These actions are irreversible. Proceed with caution.</p>
-          <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground" size="sm">
-            Export All Data
-          </Button>
         </CardContent>
       </Card>
     </div>
