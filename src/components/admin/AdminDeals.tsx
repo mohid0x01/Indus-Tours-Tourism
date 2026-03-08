@@ -1,47 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Image as ImageIcon, Search, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { dealsApi, toursApi } from '@/lib/api';
 import ImageUpload from '@/components/common/ImageUpload';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Deal {
-  id: string;
-  title: string;
-  description: string | null;
-  discount_percent: number | null;
-  code: string | null;
-  tour_id: string | null;
-  valid_from: string | null;
-  valid_until: string | null;
-  is_active: boolean;
-  is_popup: boolean;
-  image_url: string | null;
-  tours?: { title: string } | null;
+  id: string; title: string; description: string | null; discount_percent: number | null;
+  code: string | null; tour_id: string | null; valid_from: string | null; valid_until: string | null;
+  is_active: boolean; is_popup: boolean; image_url: string | null; tours?: { title: string } | null;
 }
 
-interface TourOption {
-  id: string;
-  title: string;
-  price: number;
-}
+interface TourOption { id: string; title: string; price: number; }
 
 const emptyDeal = {
-  title: '',
-  description: '',
-  discount_percent: 10,
-  code: '',
-  tour_id: null as string | null,
-  valid_from: '',
-  valid_until: '',
-  is_active: true,
-  is_popup: false,
-  image_url: '',
+  title: '', description: '', discount_percent: 10, code: '', tour_id: null as string | null,
+  valid_from: '', valid_until: '', is_active: true, is_popup: false, image_url: '',
 };
 
 export default function AdminDeals() {
@@ -52,19 +35,12 @@ export default function AdminDeals() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingDeal, setEditingDeal] = useState<typeof emptyDeal & { id?: string }>(emptyDeal);
 
-  useEffect(() => {
-    fetchDeals();
-    fetchTours();
-  }, []);
+  useEffect(() => { fetchDeals(); fetchTours(); }, []);
 
   const fetchDeals = async () => {
     setIsLoading(true);
     const { data, error } = await dealsApi.getAll();
-    if (!error && data) {
-      setDeals(data as Deal[]);
-    } else if (error) {
-      toast({ title: 'Error', description: error, variant: 'destructive' });
-    }
+    if (!error && data) setDeals(data as Deal[]);
     setIsLoading(false);
   };
 
@@ -75,183 +51,129 @@ export default function AdminDeals() {
 
   const saveDeal = async () => {
     const dealData = {
-      title: editingDeal.title,
-      description: editingDeal.description || null,
-      discount_percent: editingDeal.discount_percent || null,
-      code: editingDeal.code || null,
-      tour_id: editingDeal.tour_id || null,
-      valid_from: editingDeal.valid_from || null,
-      valid_until: editingDeal.valid_until || null,
-      is_active: editingDeal.is_active,
-      is_popup: editingDeal.is_popup,
-      image_url: editingDeal.image_url || null,
+      title: editingDeal.title, description: editingDeal.description || null,
+      discount_percent: editingDeal.discount_percent || null, code: editingDeal.code || null,
+      tour_id: editingDeal.tour_id || null, valid_from: editingDeal.valid_from || null,
+      valid_until: editingDeal.valid_until || null, is_active: editingDeal.is_active,
+      is_popup: editingDeal.is_popup, image_url: editingDeal.image_url || null,
     };
-
-    let result;
-    if (editingDeal.id) {
-      result = await dealsApi.update(editingDeal.id, dealData);
-    } else {
-      result = await dealsApi.create(dealData);
-    }
-
-    if (result.error) {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Success', description: `Deal ${editingDeal.id ? 'updated' : 'created'}` });
-      setIsEditing(false);
-      setEditingDeal(emptyDeal);
-      fetchDeals();
-    }
+    const result = editingDeal.id ? await dealsApi.update(editingDeal.id, dealData) : await dealsApi.create(dealData);
+    if (result.error) toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    else { toast({ title: 'Success', description: `Deal ${editingDeal.id ? 'updated' : 'created'}` }); setIsEditing(false); setEditingDeal(emptyDeal); fetchDeals(); }
   };
 
   const deleteDeal = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deal?')) return;
     const { error } = await dealsApi.delete(id);
-    if (error) {
-      toast({ title: 'Error', description: error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Success', description: 'Deal deleted' });
-      fetchDeals();
-    }
+    if (error) toast({ title: 'Error', description: error, variant: 'destructive' });
+    else { toast({ title: 'Deleted' }); fetchDeals(); }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+
+  const activeDeals = deals.filter(d => d.is_active);
+  const expiredDeals = deals.filter(d => d.valid_until && new Date(d.valid_until) < new Date());
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <p className="text-muted-foreground">{deals.length} deals</p>
-        <Button onClick={() => { setEditingDeal(emptyDeal); setIsEditing(true); }}>
-          <Plus className="w-4 h-4 mr-2" /> Add Deal
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-3 text-xs text-muted-foreground">
+          <span>{deals.length} total</span><span>•</span>
+          <span className="text-emerald-600">{activeDeals.length} active</span><span>•</span>
+          <span>{deals.filter(d => d.is_popup).length} popup</span>
+          {expiredDeals.length > 0 && <><span>•</span><span className="text-destructive">{expiredDeals.length} expired</span></>}
+        </div>
+        <Button onClick={() => { setEditingDeal(emptyDeal); setIsEditing(true); }} size="sm" className="h-9 gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> Add Deal
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {deals.map((deal) => (
-          <div key={deal.id} className="bg-card rounded-2xl overflow-hidden shadow-card">
-            {deal.image_url ? (
-              <div className="aspect-video bg-muted">
-                <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="aspect-video bg-muted flex flex-col items-center justify-center text-muted-foreground">
-                <ImageIcon className="w-8 h-8 mb-1" />
-                <span className="text-sm">No image</span>
-              </div>
-            )}
-            <div className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-semibold text-foreground">{deal.title}</h3>
-                  {deal.code && <p className="text-sm text-primary font-mono">Code: {deal.code}</p>}
-                  {deal.tours?.title && <p className="text-xs text-muted-foreground">Tour: {deal.tours.title}</p>}
-                </div>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => { setEditingDeal({ ...deal, tour_id: deal.tour_id }); setIsEditing(true); }}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => deleteDeal(deal.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{deal.description}</p>
-              <div className="flex flex-wrap gap-2">
+      {/* Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {deals.map((deal) => {
+          const isExpired = deal.valid_until && new Date(deal.valid_until) < new Date();
+          return (
+            <Card key={deal.id} className={`border-0 shadow-card overflow-hidden group hover:shadow-lg transition-shadow ${!deal.is_active || isExpired ? 'opacity-60' : ''}`}>
+              <div className="aspect-video bg-muted relative overflow-hidden">
+                {deal.image_url ? (
+                  <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-accent/10 to-primary/10">
+                    <Tag className="w-10 h-10 text-accent/40" />
+                  </div>
+                )}
                 {deal.discount_percent && (
-                  <span className="px-2 py-1 rounded bg-destructive/10 text-destructive text-sm font-semibold">
-                    {deal.discount_percent}% OFF
-                  </span>
+                  <div className="absolute top-2 left-2">
+                    <Badge className="text-sm h-7 bg-destructive border-0 font-bold">{deal.discount_percent}% OFF</Badge>
+                  </div>
                 )}
-                <span className={`px-2 py-1 rounded text-sm ${deal.is_active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                  {deal.is_active ? 'Active' : 'Inactive'}
-                </span>
-                {deal.is_popup && (
-                  <span className="px-2 py-1 rounded bg-accent/10 text-accent text-sm">Popup</span>
-                )}
+                <div className="absolute top-2 right-2 flex gap-1">
+                  {deal.is_popup && <Badge className="text-[10px] h-5 bg-accent border-0">Popup</Badge>}
+                  {isExpired && <Badge variant="destructive" className="text-[10px] h-5">Expired</Badge>}
+                </div>
               </div>
-              {deal.valid_until && (
-                <p className="text-xs text-muted-foreground">
-                  Valid until: {new Date(deal.valid_until).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-sm text-foreground">{deal.title}</h3>
+                    {deal.code && <p className="text-xs text-primary font-mono mt-0.5">Code: {deal.code}</p>}
+                    {deal.tours?.title && <p className="text-[11px] text-muted-foreground">🗺️ {deal.tours.title}</p>}
+                  </div>
+                  <div className="flex gap-0.5 flex-shrink-0">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingDeal({ ...deal }); setIsEditing(true); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="h-7 w-7"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button></AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Delete "{deal.title}"?</AlertDialogTitle><AlertDialogDescription>This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteDeal(deal.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                {deal.description && <p className="text-xs text-muted-foreground line-clamp-2">{deal.description}</p>}
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <Badge variant={deal.is_active ? 'default' : 'secondary'} className="text-[10px] h-5">
+                    {deal.is_active ? '✓ Active' : 'Inactive'}
+                  </Badge>
+                  {deal.valid_until && (
+                    <span className="text-[10px] text-muted-foreground">Until {new Date(deal.valid_until).toLocaleDateString()}</span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
+      {/* Edit Modal */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingDeal.id ? 'Edit Deal' : 'Add New Deal'}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingDeal.id ? 'Edit Deal' : 'Add New Deal'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Title *</label>
-              <Input value={editingDeal.title} onChange={(e) => setEditingDeal({ ...editingDeal, title: e.target.value })} placeholder="Deal title" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Description</label>
-              <Textarea value={editingDeal.description || ''} onChange={(e) => setEditingDeal({ ...editingDeal, description: e.target.value })} placeholder="Deal description" rows={3} />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Linked Tour</label>
-              <select
-                value={editingDeal.tour_id || ''}
-                onChange={(e) => setEditingDeal({ ...editingDeal, tour_id: e.target.value || null })}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background"
-              >
-                <option value="">No specific tour (applies to all)</option>
-                {tours.map((tour) => (
-                  <option key={tour.id} value={tour.id}>
-                    {tour.title} - PKR {tour.price.toLocaleString()}
-                  </option>
-                ))}
+            <div><label className="text-xs font-medium text-muted-foreground">Title *</label><Input value={editingDeal.title} onChange={(e) => setEditingDeal({ ...editingDeal, title: e.target.value })} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Description</label><Textarea value={editingDeal.description || ''} onChange={(e) => setEditingDeal({ ...editingDeal, description: e.target.value })} rows={3} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Linked Tour</label>
+              <select value={editingDeal.tour_id || ''} onChange={(e) => setEditingDeal({ ...editingDeal, tour_id: e.target.value || null })} className="w-full h-10 px-3 rounded-md border border-input bg-background mt-1 text-sm">
+                <option value="">All tours</option>
+                {tours.map(t => <option key={t.id} value={t.id}>{t.title} - PKR {t.price.toLocaleString()}</option>)}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Discount %</label>
-                <Input type="number" value={editingDeal.discount_percent || ''} onChange={(e) => setEditingDeal({ ...editingDeal, discount_percent: Number(e.target.value) })} placeholder="e.g., 25" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Promo Code</label>
-                <Input value={editingDeal.code || ''} onChange={(e) => setEditingDeal({ ...editingDeal, code: e.target.value.toUpperCase() })} placeholder="e.g., SUMMER25" />
-              </div>
+              <div><label className="text-xs font-medium text-muted-foreground">Discount %</label><Input type="number" value={editingDeal.discount_percent || ''} onChange={(e) => setEditingDeal({ ...editingDeal, discount_percent: Number(e.target.value) })} className="mt-1" /></div>
+              <div><label className="text-xs font-medium text-muted-foreground">Promo Code</label><Input value={editingDeal.code || ''} onChange={(e) => setEditingDeal({ ...editingDeal, code: e.target.value.toUpperCase() })} placeholder="SUMMER25" className="mt-1" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Valid From</label>
-                <Input type="date" value={editingDeal.valid_from || ''} onChange={(e) => setEditingDeal({ ...editingDeal, valid_from: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Valid Until</label>
-                <Input type="date" value={editingDeal.valid_until || ''} onChange={(e) => setEditingDeal({ ...editingDeal, valid_until: e.target.value })} />
-              </div>
+              <div><label className="text-xs font-medium text-muted-foreground">Valid From</label><Input type="date" value={editingDeal.valid_from || ''} onChange={(e) => setEditingDeal({ ...editingDeal, valid_from: e.target.value })} className="mt-1" /></div>
+              <div><label className="text-xs font-medium text-muted-foreground">Valid Until</label><Input type="date" value={editingDeal.valid_until || ''} onChange={(e) => setEditingDeal({ ...editingDeal, valid_until: e.target.value })} className="mt-1" /></div>
             </div>
-            <div>
-              <label className="text-sm font-medium">Image</label>
-              <ImageUpload value={editingDeal.image_url || null} onChange={(url) => setEditingDeal({ ...editingDeal, image_url: url || '' })} folder="deals" />
+            <div><label className="text-xs font-medium text-muted-foreground">Image</label><div className="mt-1"><ImageUpload value={editingDeal.image_url || null} onChange={(url) => setEditingDeal({ ...editingDeal, image_url: url || '' })} folder="deals" /></div></div>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editingDeal.is_active} onChange={(e) => setEditingDeal({ ...editingDeal, is_active: e.target.checked })} /> Active</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editingDeal.is_popup} onChange={(e) => setEditingDeal({ ...editingDeal, is_popup: e.target.checked })} /> Show as Popup</label>
             </div>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={editingDeal.is_active} onChange={(e) => setEditingDeal({ ...editingDeal, is_active: e.target.checked })} />
-                Active
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={editingDeal.is_popup} onChange={(e) => setEditingDeal({ ...editingDeal, is_popup: e.target.checked })} />
-                Show as Popup
-              </label>
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button onClick={saveDeal} disabled={!editingDeal.title}>{editingDeal.id ? 'Update' : 'Create'} Deal</Button>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            </div>
+            <div className="flex gap-2 pt-2"><Button onClick={saveDeal} disabled={!editingDeal.title}>{editingDeal.id ? 'Update' : 'Create'} Deal</Button><Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button></div>
           </div>
         </DialogContent>
       </Dialog>
