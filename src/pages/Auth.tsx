@@ -302,6 +302,7 @@ export default function Auth() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="email"
+                    name="email"
                     value={formData.email}
                     onChange={(e) => {
                       setFormData({ ...formData, email: e.target.value });
@@ -309,6 +310,7 @@ export default function Auth() {
                     }}
                     placeholder="you@example.com"
                     className="pl-10"
+                    autoComplete="email"
                     required
                   />
                 </div>
