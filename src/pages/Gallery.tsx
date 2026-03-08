@@ -116,7 +116,7 @@ export default function Gallery() {
             ))}
           </div>
         )}
-
+      </div>
       {/* Lightbox */}
       {lightbox && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
