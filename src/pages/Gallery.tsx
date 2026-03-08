@@ -112,11 +112,10 @@ export default function Gallery() {
                 {photo.is_featured && (
                   <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">Featured</span>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
-              </motion.div>
 
       {/* Lightbox */}
       {lightbox && (
