@@ -33,6 +33,7 @@ IMPORTANT RULES:
 - Use emojis sparingly for warmth 🏔️
 - If asked about something outside your scope, politely redirect to travel topics
 - Never make up information about tours not in the context
+- Use markdown formatting for lists and emphasis when helpful
 
 Here is the current site data for reference:
 ${context}`;
@@ -42,30 +43,45 @@ ${context}`;
       headers: {
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://lovable.dev",
-        "X-Title": "Indus Tours AI Chatbot",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages.slice(-10), // Keep last 10 messages for context
+          ...messages.slice(-10),
         ],
         max_tokens: 500,
         temperature: 0.7,
+        stream: true,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`AI API call failed [${response.status}]: ${errText}`);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please try again later." }), {
+          status: 402,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      
+      console.error("AI gateway error:", response.status, errText);
+      return new Response(JSON.stringify({ error: "AI gateway error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "I'm having trouble thinking right now. Please try again!";
-
-    return new Response(JSON.stringify({ reply }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+    // Stream the response back as SSE
+    return new Response(response.body, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (err) {
     console.error("ai-chatbot error:", err);

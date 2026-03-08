@@ -1,10 +1,97 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chatbot`;
+
+async function streamChat({
+  messages,
+  context,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  messages: Message[];
+  context: string;
+  onDelta: (text: string) => void;
+  onDone: () => void;
+  onError: (err: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages, context }),
+  });
+
+  if (!resp.ok || !resp.body) {
+    const errorData = await resp.json().catch(() => ({}));
+    onError(errorData.error || "Failed to connect to AI assistant");
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let textBuffer = "";
+  let streamDone = false;
+
+  while (!streamDone) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    textBuffer += decoder.decode(value, { stream: true });
+
+    let newlineIndex: number;
+    while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+      let line = textBuffer.slice(0, newlineIndex);
+      textBuffer = textBuffer.slice(newlineIndex + 1);
+
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.startsWith(":") || line.trim() === "") continue;
+      if (!line.startsWith("data: ")) continue;
+
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") {
+        streamDone = true;
+        break;
+      }
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch {
+        textBuffer = line + "\n" + textBuffer;
+        break;
+      }
+    }
+  }
+
+  // Final flush
+  if (textBuffer.trim()) {
+    for (let raw of textBuffer.split("\n")) {
+      if (!raw) continue;
+      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+      if (raw.startsWith(":") || raw.trim() === "") continue;
+      if (!raw.startsWith("data: ")) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch { /* ignore partial leftovers */ }
+    }
+  }
+
+  onDone();
 }
 
 export default function AIChatbot() {
@@ -24,7 +111,8 @@ export default function AIChatbot() {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    const userMessage: Message = { role: 'user', content: userMsg };
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
@@ -40,25 +128,37 @@ Available Tours: ${JSON.stringify(toursRes.data || [])}
 Destinations: ${JSON.stringify(destsRes.data || [])}
 Active Deals: ${JSON.stringify(dealsRes.data || [])}
 Company: Indus Tours Pakistan, based in Islamabad, specializing in Northern Pakistan tours.
-Contact: WhatsApp +92-XXX-XXXXXXX, Email admin@industours.pk
+Contact: WhatsApp +92-311-8088007, Email admin@industours.pk
 `;
 
-      const response = await supabase.functions.invoke('ai-chatbot', {
-        body: {
-          messages: [...messages, { role: 'user', content: userMsg }],
-          context,
+      let assistantSoFar = "";
+      const allMessages = [...messages, userMessage];
+
+      const upsertAssistant = (nextChunk: string) => {
+        assistantSoFar += nextChunk;
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.content === userMsg) {
+            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+          }
+          return [...prev, { role: "assistant", content: assistantSoFar }];
+        });
+      };
+
+      await streamChat({
+        messages: allMessages,
+        context,
+        onDelta: (chunk) => upsertAssistant(chunk),
+        onDone: () => setIsLoading(false),
+        onError: (err) => {
+          setMessages(prev => [...prev, { role: 'assistant', content: err || "Sorry, I couldn't process that. Please try again!" }]);
+          setIsLoading(false);
         },
       });
-
-      if (response.data?.reply) {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.data.reply }]);
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I couldn't process that. Please try again or contact us on WhatsApp!" }]);
-      }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: "Connection issue. Please try again!" }]);
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   if (!isOpen) {
@@ -103,7 +203,13 @@ Contact: WhatsApp +92-XXX-XXXXXXX, Email admin@industours.pk
                 ? 'bg-primary text-primary-foreground rounded-br-sm'
                 : 'bg-muted text-foreground rounded-bl-sm'
             }`}>
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1 [&>p+p]:mt-1.5">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                msg.content
+              )}
             </div>
             {msg.role === 'user' && (
               <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
@@ -112,7 +218,7 @@ Contact: WhatsApp +92-XXX-XXXXXXX, Email admin@industours.pk
             )}
           </div>
         ))}
-        {isLoading && (
+        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="flex gap-2 items-center">
             <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
               <Bot className="w-4 h-4 text-primary" />
