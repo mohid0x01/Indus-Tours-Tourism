@@ -147,6 +147,19 @@ export default function AdminVisitors() {
     uniqueCountries: new Set(visitors.map(v => v.country).filter(Boolean)).size,
   };
 
+  const blockIP = async (ip: string) => {
+    const { error } = await supabase.from('banned_ips').insert({
+      ip_address: ip,
+      reason: 'Blocked from visitor logs',
+      is_active: true,
+    });
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '🚫 IP Blocked', description: `${ip} has been blacklisted` });
+    }
+  };
+
   const exportCSV = () => {
     const headers = ['Date', 'Browser', 'OS', 'Device', 'IP', 'Country', 'City', 'Screen', 'Time on Page', 'Max Scroll', 'Connection', 'Battery', 'Page Load', 'Entry URL'];
     const rows = filtered.map(v => [
