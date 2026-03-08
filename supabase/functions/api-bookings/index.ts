@@ -23,11 +23,9 @@ serve(async (req) => {
     const userId = url.searchParams.get("user_id");
     const includeDeleted = url.searchParams.get("include_deleted") === "true";
 
-    // Get IP and user agent for logging
     const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
     const userAgent = req.headers.get("user-agent") || "unknown";
 
-    // All booking operations require auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -48,7 +46,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if admin
     const { data: role } = await db
       .from("user_roles")
       .select("role")
@@ -58,7 +55,6 @@ serve(async (req) => {
 
     const isAdmin = !!role;
 
-    // Log activity helper
     const logActivity = async (action: string, entityId?: string, details?: Record<string, unknown>) => {
       await db.from("activity_logs").insert({
         user_id: user.id,
@@ -71,10 +67,20 @@ serve(async (req) => {
       });
     };
 
+    // Safe JSON body parser - returns empty object if no body
+    const safeParseBody = async (): Promise<Record<string, unknown>> => {
+      try {
+        const text = await req.text();
+        if (!text || text.trim() === "") return {};
+        return JSON.parse(text);
+      } catch {
+        return {};
+      }
+    };
+
     if (req.method === "GET") {
       let query = db.from("bookings").select("*, tours(title, image_url), deals(title, discount_percent, code)");
       
-      // Filter deleted bookings unless explicitly requested
       if (!includeDeleted) {
         query = query.or("is_deleted.is.null,is_deleted.eq.false");
       }
@@ -86,7 +92,6 @@ serve(async (req) => {
         query = query.eq("status", status);
       }
       
-      // Non-admins can only see their own bookings
       if (!isAdmin) {
         query = query.eq("user_id", user.id);
       } else if (userId) {
@@ -103,7 +108,7 @@ serve(async (req) => {
     }
 
     if (req.method === "PUT") {
-      const body = await req.json();
+      const body = await safeParseBody();
       
       // Handle bulk update
       if (body.bulk && body.ids) {
@@ -118,7 +123,7 @@ serve(async (req) => {
         const { data, error } = await db
           .from("bookings")
           .update({ ...updates, updated_at: new Date().toISOString() })
-          .in("id", ids)
+          .in("id", ids as string[])
           .select();
 
         if (error) throw error;
@@ -142,13 +147,13 @@ serve(async (req) => {
         const { data, error } = await db
           .from("bookings")
           .update({ is_deleted: false, deleted_at: null, deleted_by: null, updated_at: new Date().toISOString() })
-          .eq("id", body.id)
+          .eq("id", body.id as string)
           .select()
           .single();
 
         if (error) throw error;
 
-        await logActivity("restore", body.id, { restored: true });
+        await logActivity("restore", body.id as string, { restored: true });
 
         return new Response(JSON.stringify({ data }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -157,12 +162,11 @@ serve(async (req) => {
 
       const { id: bookingId, ...updates } = body;
 
-      // Check permission
       if (!isAdmin) {
         const { data: booking } = await db
           .from("bookings")
           .select("user_id, status")
-          .eq("id", bookingId)
+          .eq("id", bookingId as string)
           .single();
 
         if (!booking || booking.user_id !== user.id) {
@@ -172,7 +176,6 @@ serve(async (req) => {
           });
         }
 
-        // Users can only update pending bookings
         if (booking.status !== "pending") {
           return new Response(JSON.stringify({ error: "Can only modify pending bookings" }), {
             status: 400,
@@ -180,7 +183,6 @@ serve(async (req) => {
           });
         }
 
-        // Users can only update travel_date or cancel
         const allowedFields = ["travel_date", "status"];
         for (const key of Object.keys(updates)) {
           if (!allowedFields.includes(key)) {
@@ -192,13 +194,13 @@ serve(async (req) => {
       const { data, error } = await db
         .from("bookings")
         .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", bookingId)
+        .eq("id", bookingId as string)
         .select()
         .single();
 
       if (error) throw error;
 
-      await logActivity("update", bookingId, updates);
+      await logActivity("update", bookingId as string, updates);
 
       return new Response(JSON.stringify({ data }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -213,10 +215,14 @@ serve(async (req) => {
         });
       }
 
-      const body = await req.json();
+      // Support both body and query param for ID
+      const body = await safeParseBody();
+      const deleteId = (body.id as string) || id;
+      const bulkIds = body.ids as string[] | undefined;
+      const isBulk = body.bulk as boolean | undefined;
 
       // Handle bulk delete (soft delete)
-      if (body.bulk && body.ids) {
+      if (isBulk && bulkIds) {
         const { error } = await db
           .from("bookings")
           .update({ 
@@ -225,11 +231,11 @@ serve(async (req) => {
             deleted_by: user.id,
             updated_at: new Date().toISOString()
           })
-          .in("id", body.ids);
+          .in("id", bulkIds);
 
         if (error) throw error;
 
-        await logActivity("bulk_delete", undefined, { ids: body.ids });
+        await logActivity("bulk_delete", undefined, { ids: bulkIds });
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -237,6 +243,13 @@ serve(async (req) => {
       }
 
       // Soft delete single booking
+      if (!deleteId) {
+        return new Response(JSON.stringify({ error: "Missing booking ID" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
       const { error } = await db
         .from("bookings")
         .update({ 
@@ -245,11 +258,11 @@ serve(async (req) => {
           deleted_by: user.id,
           updated_at: new Date().toISOString()
         })
-        .eq("id", body.id);
+        .eq("id", deleteId);
 
       if (error) throw error;
 
-      await logActivity("delete", body.id, { soft_deleted: true });
+      await logActivity("delete", deleteId, { soft_deleted: true });
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
