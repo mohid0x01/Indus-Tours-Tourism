@@ -35,6 +35,7 @@ import AdminSecurityDashboard from '@/components/admin/AdminSecurityDashboard';
 import AdminSystemHealth from '@/components/admin/AdminSystemHealth';
 import AdminUserAnalytics from '@/components/admin/AdminUserAnalytics';
 import AdminAuditTrail from '@/components/admin/AdminAuditTrail';
+import AdminSiteControl from '@/components/admin/AdminSiteControl';
 import { logAdminAction } from '@/lib/activityLogger';
 
 const menuItems = [
