@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
 
 
 interface TourOption {
@@ -89,7 +90,12 @@ export default function Feedback() {
       <section className="py-12 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg ultra-card">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg ultra-card"
+            >
               <div className="flex items-center gap-3 mb-6 sm:mb-8">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -163,7 +169,7 @@ export default function Feedback() {
                   )}
                 </Button>
               </form>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>

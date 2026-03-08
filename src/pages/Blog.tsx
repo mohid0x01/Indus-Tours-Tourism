@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, MapPin, ArrowRight, Search, Tag } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface BlogPost {
   id: string;
@@ -84,10 +85,15 @@ export default function Blog() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-16">
-        <div className="text-center mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
           <h1 className="text-4xl font-bold text-foreground mb-3">Travel Blog & Guides</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">Expert tips, destination guides, and travel stories from the heart of Northern Pakistan</p>
-        </div>
+        </motion.div>
 
         {/* Search & Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -128,9 +134,12 @@ export default function Blog() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(post => (
-              <article
+            {filtered.map((post, index) => (
+              <motion.article
                 key={post.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
                 onClick={() => setSelectedPost(post)}
                 className="group cursor-pointer bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:shadow-lg"
               >
@@ -154,7 +163,7 @@ export default function Blog() {
                     Read More <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         )}

@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, Heart, MapPin, Filter, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
@@ -47,10 +48,15 @@ export default function Gallery() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-16">
-        <div className="text-center mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
           <h1 className="text-4xl font-bold text-foreground mb-3">Photo Gallery</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">Stunning views from Northern Pakistan captured by our travelers and team</p>
-        </div>
+        </motion.div>
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap mb-8 justify-center">
@@ -80,9 +86,12 @@ export default function Gallery() {
           </div>
         ) : (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-            {filtered.map(photo => (
-              <div
+            {filtered.map((photo, index) => (
+              <motion.div
                 key={photo.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
                 onClick={() => setLightbox(photo)}
                 className="break-inside-avoid group cursor-pointer relative overflow-hidden rounded-xl"
               >
@@ -103,12 +112,11 @@ export default function Gallery() {
                 {photo.is_featured && (
                   <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">Featured</span>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
       </div>
-
       {/* Lightbox */}
       {lightbox && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
