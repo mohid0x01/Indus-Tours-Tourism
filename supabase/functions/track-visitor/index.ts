@@ -87,6 +87,13 @@ serve(async (req) => {
         nav_type: body.nav_type,
         ip_address: ipAddress,
         device_type: deviceType,
+        device_memory: body.device_memory,
+        connection_type: body.connection_type,
+        downlink: body.downlink,
+        battery_level: body.battery_level != null ? Math.round(body.battery_level) : null,
+        battery_charging: body.battery_charging,
+        page_load_time: body.page_load_time != null ? Math.round(body.page_load_time) : null,
+        dom_load_time: body.dom_load_time != null ? Math.round(body.dom_load_time) : null,
       }).select().single();
 
       if (error) throw error;
