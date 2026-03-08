@@ -173,8 +173,8 @@ export default function Admin() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-6 px-2 pt-1">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 relative">
-          IT
+        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/20 relative border-2 border-primary/30">
+          <img src={logo} alt="Indus Tours" className="w-full h-full object-cover" />
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#060a16] animate-pulse" />
         </div>
         <div>
