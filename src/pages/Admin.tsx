@@ -41,6 +41,7 @@ const menuItems = [
   { id: 'hotels', icon: Hotel, label: 'Hotels', group: 'Manage' },
   { id: 'deals', icon: Tag, label: 'Deals & Offers', group: 'Manage' },
   { id: 'feedback', icon: MessageSquare, label: 'Feedback', group: 'Engagement' },
+  { id: 'contact', icon: MessageCircle, label: 'Contact Messages', group: 'Engagement' },
   { id: 'users', icon: Users, label: 'Users', group: 'Engagement' },
   { id: 'notifications', icon: Bell, label: 'Notifications', group: 'Engagement' },
   { id: 'visitors', icon: Eye, label: 'Visitor Logs', group: 'Intelligence' },
