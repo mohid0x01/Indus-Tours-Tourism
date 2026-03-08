@@ -464,7 +464,17 @@ export default function Dashboard() {
               )}
             </TabsContent>
 
-            {/* ─── PROFILE ─── */}
+            {/* ─── WISHLIST ─── */}
+            <TabsContent value="wishlist" className="space-y-6 animate-fade-up">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-serif font-bold text-foreground">My Wishlist</h2>
+                  <div className="gold-divider mt-2" />
+                </div>
+              </div>
+              <WishlistSection userId={user.id} />
+            </TabsContent>
+
             <TabsContent value="profile" className="space-y-6 animate-fade-up">
               <div className="flex items-center justify-between">
                 <div>
