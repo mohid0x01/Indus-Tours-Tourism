@@ -36,6 +36,11 @@ import AdminSystemHealth from '@/components/admin/AdminSystemHealth';
 import AdminUserAnalytics from '@/components/admin/AdminUserAnalytics';
 import AdminAuditTrail from '@/components/admin/AdminAuditTrail';
 import AdminSiteControl from '@/components/admin/AdminSiteControl';
+import AdminBlog from '@/components/admin/AdminBlog';
+import AdminGallery from '@/components/admin/AdminGallery';
+import AdminNewsletter from '@/components/admin/AdminNewsletter';
+import AdminLoyalty from '@/components/admin/AdminLoyalty';
+import AdminAbandonedBookings from '@/components/admin/AdminAbandonedBookings';
 import { logAdminAction } from '@/lib/activityLogger';
 
 const menuItems = [
