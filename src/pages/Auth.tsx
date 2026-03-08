@@ -289,6 +289,7 @@ export default function Auth() {
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="John Doe"
                       className="pl-10"
+                      autoComplete="name"
                       required={!isLogin}
                     />
                   </div>
