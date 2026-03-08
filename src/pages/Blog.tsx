@@ -163,7 +163,7 @@ export default function Blog() {
                     Read More <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         )}
