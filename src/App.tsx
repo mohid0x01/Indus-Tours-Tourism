@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import WhatsAppButton from "@/components/common/WhatsAppButton";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import Index from "./pages/Index";
 import Destinations from "./pages/Destinations";
 import Tours from "./pages/Tours";
@@ -22,6 +23,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function VisitorTracker() {
+  useVisitorTracking();
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -29,6 +35,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <VisitorTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/destinations" element={<Destinations />} />
