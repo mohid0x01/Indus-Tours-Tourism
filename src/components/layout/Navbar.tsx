@@ -206,6 +206,15 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="flex flex-col gap-2.5 mt-4 pt-4 border-t border-border/30">
+            <button
+              onClick={toggleTheme}
+              className="py-3 px-4 rounded-xl font-medium text-base flex items-center justify-between text-foreground hover:bg-muted/50 transition-all duration-300"
+            >
+              <span className="flex items-center gap-2">
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </span>
+            </button>
             {!authLoading && (
               user ? (
                 <Button variant="outline" asChild className="rounded-xl border-primary/20">
