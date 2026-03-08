@@ -15,7 +15,8 @@ import {
   BarChart3, TrendingUp, Award,
   MessageSquare, HelpCircle, ChevronRight,
   Star, Plane, CreditCard, Bell, Settings,
-  Globe, Activity, Heart
+  Globe, Activity, Heart, Bookmark, Monitor,
+  Smartphone, MapPinned, AlertTriangle
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
