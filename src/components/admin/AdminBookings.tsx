@@ -83,6 +83,7 @@ export default function AdminBookings() {
       toast({ title: 'Error', description: error, variant: 'destructive' });
     } else {
       toast({ title: 'Success', description: `Booking ${status}` });
+      logAdminAction('update', 'booking', id, { status });
       fetchBookings();
     }
   };
