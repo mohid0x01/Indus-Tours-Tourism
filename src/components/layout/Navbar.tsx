@@ -6,10 +6,6 @@ import { cn } from '@/lib/utils';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useSiteContent } from '@/hooks/useSiteContent';
-import { useAuth } from '@/hooks/useAuth';
 import logo from '@/assets/indus-tours-logo.jpeg';
 
 const navLinks = [
