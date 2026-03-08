@@ -25,6 +25,29 @@ serve(async (req) => {
     if (req.method === "POST") {
       const body = await req.json();
       
+      // Handle sendBeacon PUT workaround
+      if (body._method === "PUT") {
+        const sessionId = body.session_id;
+        if (!sessionId) {
+          return new Response(JSON.stringify({ error: "Missing session_id" }), {
+            status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+        const { error } = await db.from("visitor_logs")
+          .update({
+            time_on_page: body.time_on_page,
+            mouse_moves: body.mouse_moves,
+            scroll_distance: body.scroll_distance,
+            max_scroll: body.max_scroll,
+            sections_viewed: body.sections_viewed,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("session_id", sessionId);
+        if (error) throw error;
+        return new Response(JSON.stringify({ data: { success: true } }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
       // Detect device type from user agent
       const ua = (body.user_agent || "").toLowerCase();
       let deviceType = "desktop";
