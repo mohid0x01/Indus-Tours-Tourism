@@ -91,10 +91,13 @@ export default function Admin() {
       case 'deals': return <AdminDeals />;
       case 'feedback': return <AdminFeedback />;
       case 'users': return <AdminUsers />;
+      case 'notifications': return <AdminNotifications />;
       case 'visitors': return <AdminVisitors />;
       case 'analytics': return <AdminAnalytics />;
       case 'activity': return <AdminActivityLogs />;
       case 'content': return <AdminContent />;
+      case 'seo': return <AdminSEO />;
+      case 'email-templates': return <AdminEmailTemplates />;
       case 'settings': return <AdminSettings />;
       default: return <AdminDashboard />;
     }
