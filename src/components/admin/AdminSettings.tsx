@@ -155,6 +155,37 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* Mega Export */}
+      <Card className="border border-primary/20 bg-primary/[0.02]">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Download className="w-4 h-4 text-primary" />
+            </div>
+            Mega Export — Download Everything
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Export all data including bookings, users, tours, vehicles, hotels, deals, feedback, contact messages, 
+            blog posts, gallery, newsletter subscribers, activity logs, visitor logs, login attempts, banned IPs, 
+            user bans, sessions, loyalty points, referrals, abandoned bookings, and site settings as a single JSON file.
+          </p>
+          <Button 
+            onClick={handleMegaExport} 
+            disabled={isExporting} 
+            size="sm" 
+            className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20"
+          >
+            {isExporting ? (
+              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Exporting All Data...</>
+            ) : (
+              <><Download className="w-3.5 h-3.5 mr-1.5" /> Download Full Export (JSON)</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Danger */}
       <Card className="border border-destructive/10 bg-destructive/[0.02]">
         <CardHeader className="pb-3">
@@ -167,9 +198,6 @@ export default function AdminSettings() {
         </CardHeader>
         <CardContent>
           <p className="text-[11px] text-muted-foreground mb-3">These actions are irreversible. Proceed with caution.</p>
-          <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground" size="sm">
-            Export All Data
-          </Button>
         </CardContent>
       </Card>
     </div>
