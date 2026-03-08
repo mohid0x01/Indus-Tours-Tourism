@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, MapPin, CalendarDays, Car, Tag, MessageSquare, Settings,
   LogOut, FileText, Bell, BarChart3, Loader2, Menu, Hotel, Home, Users, Activity, Eye,
-  ChevronRight, Zap, Search, Mail, MessageCircle
+  ChevronRight, Zap, Search, Mail, MessageCircle, Shield, Server, FileCheck, Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,10 @@ import AdminSEO from '@/components/admin/AdminSEO';
 import AdminEmailTemplates from '@/components/admin/AdminEmailTemplates';
 import AdminNotifications from '@/components/admin/AdminNotifications';
 import AdminContactMessages from '@/components/admin/AdminContactMessages';
+import AdminSecurityDashboard from '@/components/admin/AdminSecurityDashboard';
+import AdminSystemHealth from '@/components/admin/AdminSystemHealth';
+import AdminUserAnalytics from '@/components/admin/AdminUserAnalytics';
+import AdminAuditTrail from '@/components/admin/AdminAuditTrail';
 import { logAdminAction } from '@/lib/activityLogger';
 
 const menuItems = [
@@ -45,15 +49,19 @@ const menuItems = [
   { id: 'users', icon: Users, label: 'Users', group: 'Engagement' },
   { id: 'notifications', icon: Bell, label: 'Notifications', group: 'Engagement' },
   { id: 'visitors', icon: Eye, label: 'Visitor Logs', group: 'Intelligence' },
+  { id: 'user-analytics', icon: Monitor, label: 'User Analytics', group: 'Intelligence' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics', group: 'Intelligence' },
   { id: 'activity', icon: Activity, label: 'Activity Logs', group: 'Intelligence' },
+  { id: 'security', icon: Shield, label: 'Security Threats', group: 'Security' },
+  { id: 'audit-trail', icon: FileCheck, label: 'Audit Trail', group: 'Security' },
+  { id: 'system-health', icon: Server, label: 'System Health', group: 'Security' },
   { id: 'content', icon: FileText, label: 'Content Editor', group: 'System' },
   { id: 'seo', icon: Search, label: 'SEO Settings', group: 'System' },
   { id: 'email-templates', icon: Mail, label: 'Email Templates', group: 'System' },
   { id: 'settings', icon: Settings, label: 'Settings', group: 'System' },
 ];
 
-const groups = ['Overview', 'Manage', 'Engagement', 'Intelligence', 'System'];
+const groups = ['Overview', 'Manage', 'Engagement', 'Intelligence', 'Security', 'System'];
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -96,8 +104,12 @@ export default function Admin() {
       case 'users': return <AdminUsers />;
       case 'notifications': return <AdminNotifications />;
       case 'visitors': return <AdminVisitors />;
+      case 'user-analytics': return <AdminUserAnalytics />;
       case 'analytics': return <AdminAnalytics />;
       case 'activity': return <AdminActivityLogs />;
+      case 'security': return <AdminSecurityDashboard />;
+      case 'audit-trail': return <AdminAuditTrail />;
+      case 'system-health': return <AdminSystemHealth />;
       case 'content': return <AdminContent />;
       case 'seo': return <AdminSEO />;
       case 'email-templates': return <AdminEmailTemplates />;
