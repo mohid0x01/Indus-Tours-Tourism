@@ -411,6 +411,7 @@ export default function Dashboard() {
             <TabsList className="glass-card p-1 rounded-2xl h-auto flex-wrap gap-1 shadow-sm">
               {[
                 { value: 'bookings', icon: Calendar, label: 'Bookings' },
+                { value: 'wishlist', icon: Bookmark, label: 'Wishlist' },
                 { value: 'profile', icon: User, label: 'Profile' },
                 { value: 'security', icon: Shield, label: 'Security' },
                 { value: 'reviews', icon: Star, label: 'Reviews' },
