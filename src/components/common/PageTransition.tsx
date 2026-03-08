@@ -5,24 +5,21 @@ import { useLocation } from 'react-router-dom';
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 20,
-    scale: 0.98,
+    y: 16,
   },
   animate: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
-      duration: 0.5,
+      duration: 0.4,
       ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
     },
   },
   exit: {
     opacity: 0,
-    y: -12,
-    scale: 0.99,
+    y: -10,
     transition: {
-      duration: 0.3,
+      duration: 0.25,
       ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
     },
   },
@@ -42,7 +39,6 @@ export default function PageTransition({ children }: PageTransitionProps) {
       animate="animate"
       exit="exit"
       variants={pageVariants}
-      style={{ willChange: 'opacity, transform' }}
     >
       {children}
     </motion.div>

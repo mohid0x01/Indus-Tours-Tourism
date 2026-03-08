@@ -15,50 +15,6 @@ interface Feedback {
   created_at: string;
 }
 
-const slideVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 120 : -120,
-    opacity: 0,
-    scale: 0.92,
-    rotateY: direction > 0 ? 8 : -8,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    rotateY: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-    },
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? 120 : -120,
-    opacity: 0,
-    scale: 0.92,
-    rotateY: direction < 0 ? 8 : -8,
-    transition: {
-      duration: 0.4,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-    },
-  }),
-};
-
-const staggerChildren = {
-  center: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.15,
-    },
-  },
-};
-
-const childFade = {
-  enter: { opacity: 0, y: 16 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.25 } },
-};
-
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Feedback[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -131,72 +87,40 @@ export default function TestimonialsSection() {
         </motion.div>
 
         {/* Carousel */}
-        <div className="relative max-w-4xl mx-auto" style={{ perspective: '1200px' }}>
+        <div className="relative max-w-4xl mx-auto">
           <div className="relative glass-ultra rounded-2xl sm:rounded-3xl p-8 sm:p-10 md:p-14 shadow-ultra min-h-[280px] sm:min-h-[320px]">
             {/* Decorative quote */}
-            <motion.div
-              className="absolute top-6 right-6 sm:top-8 sm:right-8"
-              animate={{ opacity: [0.04, 0.08, 0.04], scale: [1, 1.05, 1] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            >
+            <div className="absolute top-6 right-6 sm:top-8 sm:right-8 opacity-[0.06]">
               <Quote className="w-16 h-16 sm:w-20 sm:h-20 text-primary" />
-            </motion.div>
+            </div>
             <div className="absolute top-6 left-6 sm:top-8 sm:left-8">
               <div className="w-12 h-px bg-gradient-to-r from-accent/30 to-transparent" />
             </div>
 
-            <AnimatePresence mode="wait" custom={direction}>
+            <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
-                custom={direction}
-                variants={{
-                  enter: slideVariants.enter,
-                  center: {
-                    ...slideVariants.center,
-                    transition: {
-                      ...((slideVariants.center as any).transition || {}),
-                      staggerChildren: 0.08,
-                      delayChildren: 0.15,
-                    },
-                  },
-                  exit: slideVariants.exit,
-                }}
-                initial="enter"
-                animate="center"
-                exit="exit"
+                initial={{ opacity: 0, x: direction >= 0 ? 60 : -60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction >= 0 ? -60 : 60 }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
                 className="space-y-6"
               >
+                {/* Stars */}
                 <div className="flex gap-1.5">
-                  {[...Array(current.rating)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0, rotate: -30 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      transition={{ delay: 0.2 + i * 0.08, duration: 0.4, type: 'spring', stiffness: 200 }}
-                    >
-                      <Star className="w-5 h-5 fill-accent text-accent drop-shadow-sm" />
-                    </motion.div>
+                  {Array.from({ length: current.rating || 0 }).map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-accent text-accent drop-shadow-sm" />
                   ))}
                 </div>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
-                  className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-foreground leading-relaxed font-serif italic"
-                >
+                {/* Message */}
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-foreground leading-relaxed font-serif italic">
                   "{current.message}"
-                </motion.p>
+                </p>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: 'easeOut', delay: 0.25 }}
-                  className="flex items-center gap-4 pt-6 border-t border-border/30"
-                >
-                  <div
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg shadow-teal ring-2 ring-primary/20"
-                  >
+                {/* Author */}
+                <div className="flex items-center gap-4 pt-6 border-t border-border/30">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg shadow-teal ring-2 ring-primary/20">
                     {getInitials(current.name)}
                   </div>
                   <div>
@@ -210,7 +134,7 @@ export default function TestimonialsSection() {
                       </p>
                     )}
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
