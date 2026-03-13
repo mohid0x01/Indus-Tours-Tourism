@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Mail, RefreshCw, Eye } from 'lucide-react';
+import { Loader2, AlertTriangle, Mail, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface AbandonedBooking {
@@ -19,6 +19,7 @@ interface AbandonedBooking {
 export default function AdminAbandonedBookings() {
   const [items, setItems] = useState<AbandonedBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   useEffect(() => { fetchItems(); }, []);
 
@@ -29,10 +30,41 @@ export default function AdminAbandonedBookings() {
     setIsLoading(false);
   };
 
-  const markRecoverySent = async (id: string) => {
-    await supabase.from('abandoned_bookings').update({ recovery_sent: true }).eq('id', id);
-    toast({ title: "Marked as recovery sent" });
-    fetchItems();
+  const sendRecoveryEmail = async (id: string) => {
+    setSendingId(id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-recovery-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ abandoned_booking_id: id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast({ title: "Failed to send", description: result.error || "Unknown error", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Recovery Email Sent! ✉️", description: `Email sent to ${result.data?.sent_to}` });
+      fetchItems();
+    } catch (err) {
+      toast({ title: "Error", description: "Network error sending email", variant: "destructive" });
+    } finally {
+      setSendingId(null);
+    }
   };
 
   const notRecovered = items.filter(i => !i.recovered);
@@ -70,13 +102,13 @@ export default function AdminAbandonedBookings() {
                 <th className="text-left p-3 text-muted-foreground">Email / User</th>
                 <th className="text-left p-3 text-muted-foreground">Date</th>
                 <th className="text-left p-3 text-muted-foreground">Status</th>
-                <th className="p-3"></th>
+                <th className="p-3 text-muted-foreground">Action</th>
               </tr>
             </thead>
             <tbody>
               {items.map(item => (
                 <tr key={item.id} className="border-b border-border/10 hover:bg-muted/10">
-                  <td className="p-3 text-foreground">{item.email || item.user_id?.slice(0, 12) || '—'}</td>
+                  <td className="p-3 text-foreground">{item.email || item.form_data?.customer_email || item.user_id?.slice(0, 12) || '—'}</td>
                   <td className="p-3 text-muted-foreground">{new Date(item.created_at).toLocaleString()}</td>
                   <td className="p-3">
                     {item.recovered ? (
@@ -87,15 +119,28 @@ export default function AdminAbandonedBookings() {
                       <Badge className="bg-amber-500/10 text-amber-400 border-0 text-[10px]">Pending</Badge>
                     )}
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">
                     {!item.recovery_sent && !item.recovered && (
-                      <button onClick={() => markRecoverySent(item.id)} className="p-1 hover:bg-muted rounded" title="Mark recovery sent">
-                        <Mail className="w-3 h-3 text-primary" />
+                      <button
+                        onClick={() => sendRecoveryEmail(item.id)}
+                        disabled={sendingId === item.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        title="Send Recovery Email"
+                      >
+                        {sendingId === item.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                        {sendingId === item.id ? 'Sending...' : 'Send Email'}
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
+              {items.length === 0 && (
+                <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">No abandoned bookings found</td></tr>
+              )}
             </tbody>
           </table>
         </CardContent>

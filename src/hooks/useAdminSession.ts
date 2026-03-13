@@ -8,8 +8,8 @@ const WARNING_BEFORE_LOGOUT = 60 * 1000; // 1 minute warning before logout
 export function useAdminSession() {
   const { signOut, isAdmin } = useAuth();
   const { toast } = useToast();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const warningRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasWarnedRef = useRef(false);
 
   const resetTimer = useCallback(() => {
