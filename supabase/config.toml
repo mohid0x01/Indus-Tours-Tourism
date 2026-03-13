@@ -26,5 +26,8 @@ verify_jwt = false
 [functions.api-export]
 verify_jwt = false
 
+[functions.send-recovery-email]
+verify_jwt = false
+
 [functions.ai-chatbot]
 verify_jwt = false
