@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { logAdminAction } from '@/lib/activityLogger';
 import {
@@ -51,6 +50,7 @@ interface UserBan {
 export default function AdminSiteControl() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
   const [settings, setSettings] = useState<Record<string, SiteSettingValue>>({});
   const [bannedIPs, setBannedIPs] = useState<BannedIP[]>([]);
   const [userBans, setUserBans] = useState<UserBan[]>([]);
@@ -85,37 +85,48 @@ export default function AdminSiteControl() {
     setIsLoading(false);
   };
 
-  const updateSetting = async (key: string, value: SiteSettingValue) => {
+  // Use upsert so settings work even if the row doesn't exist yet
+  const upsertSetting = async (key: string, value: SiteSettingValue) => {
+    setSaving(key);
     const { error } = await supabase
       .from('site_settings')
-      .update({ value: value as any, updated_at: new Date().toISOString() })
-      .eq('key', key);
+      .upsert(
+        { key, value: value as any, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      );
+    setSaving(null);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      setSettings(prev => ({ ...prev, [key]: value }));
-      logAdminAction('update_setting', 'site_settings', undefined, { key, value });
-      toast({ title: '⚡ Setting Updated', description: `${key} has been updated` });
+      return false;
     }
+    setSettings(prev => ({ ...prev, [key]: value }));
+    logAdminAction('update_setting', 'site_settings', undefined, { key, value });
+    toast({ title: '⚡ Setting Updated', description: `${key.replace(/_/g, ' ')} has been updated` });
+    return true;
   };
 
-  const toggleMaintenance = () => {
+  const toggleMaintenance = async () => {
     const current = settings.maintenance_mode || { enabled: false, message: '' };
-    updateSetting('maintenance_mode', { ...current, enabled: !current.enabled, message: maintenanceMsg });
+    const newVal = { ...current, enabled: !current.enabled, message: maintenanceMsg || 'We are currently performing maintenance. Please check back soon.' };
+    await upsertSetting('maintenance_mode', newVal);
   };
 
-  const toggleLockdown = () => {
+  const toggleLockdown = async () => {
     const current = settings.site_lockdown || { enabled: false, password: '' };
-    updateSetting('site_lockdown', { ...current, enabled: !current.enabled });
+    await upsertSetting('site_lockdown', { ...current, enabled: !current.enabled });
   };
 
-  const toggleRegistration = () => {
+  const toggleRegistration = async () => {
     const current = settings.registration_enabled || { enabled: true };
-    updateSetting('registration_enabled', { enabled: !current.enabled });
+    await upsertSetting('registration_enabled', { enabled: !current.enabled });
   };
 
-  const saveAnnouncement = () => {
-    updateSetting('announcement_banner', {
+  const saveAnnouncement = async () => {
+    if (!announcementMsg.trim()) {
+      toast({ title: 'Error', description: 'Please enter an announcement message', variant: 'destructive' });
+      return;
+    }
+    await upsertSetting('announcement_banner', {
       enabled: settings.announcement_banner?.enabled || false,
       message: announcementMsg,
       type: announcementType,
@@ -123,18 +134,34 @@ export default function AdminSiteControl() {
     });
   };
 
-  const toggleAnnouncement = () => {
+  const toggleAnnouncement = async () => {
     const current = settings.announcement_banner || { enabled: false, message: '', type: 'info', dismissible: true };
-    updateSetting('announcement_banner', { ...current, enabled: !current.enabled, message: announcementMsg, type: announcementType });
+    await upsertSetting('announcement_banner', { 
+      ...current, 
+      enabled: !current.enabled, 
+      message: announcementMsg || 'Important announcement',
+      type: announcementType 
+    });
   };
 
   const banIP = async () => {
-    if (!newIP.trim()) return;
+    if (!newIP.trim()) {
+      toast({ title: 'Error', description: 'Please enter an IP address', variant: 'destructive' });
+      return;
+    }
+    // Basic IP validation
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(newIP.trim())) {
+      toast({ title: 'Invalid IP', description: 'Please enter a valid IPv4 address', variant: 'destructive' });
+      return;
+    }
+    setSaving('ban_ip');
     const { error } = await supabase.from('banned_ips').insert({
       ip_address: newIP.trim(),
       reason: newIPReason || 'Blocked by admin',
       is_active: true,
     });
+    setSaving(null);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -147,20 +174,35 @@ export default function AdminSiteControl() {
   };
 
   const unbanIP = async (id: string, ip: string) => {
-    await supabase.from('banned_ips').update({ is_active: false }).eq('id', id);
+    const { error } = await supabase.from('banned_ips').update({ is_active: false }).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
     logAdminAction('unban_ip', 'banned_ips', id, { ip });
-    toast({ title: 'IP Unblocked', description: `${ip} removed from blacklist` });
+    toast({ title: '✅ IP Unblocked', description: `${ip} removed from blacklist` });
     fetchAll();
   };
 
   const liftUserBan = async (id: string) => {
-    await supabase.from('user_bans').update({ is_active: false }).eq('id', id);
-    toast({ title: 'Ban Lifted', description: 'User ban has been removed' });
+    const { error } = await supabase.from('user_bans').update({ is_active: false }).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: '✅ Ban Lifted', description: 'User ban has been removed' });
     fetchAll();
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-xs text-muted-foreground">Loading God Mode controls...</p>
+        </div>
+      </div>
+    );
   }
 
   const isMaintenanceOn = settings.maintenance_mode?.enabled || false;
@@ -171,31 +213,31 @@ export default function AdminSiteControl() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/10 flex items-center justify-center">
-          <Skull className="w-6 h-6 text-red-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/10 flex items-center justify-center flex-shrink-0">
+            <Skull className="w-6 h-6 text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              God Mode <Badge className="bg-red-500/20 text-red-400 text-[10px]">ULTRA</Badge>
+            </h2>
+            <p className="text-xs text-muted-foreground">Full site control. Use with extreme caution.</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            God Mode <Badge className="bg-red-500/20 text-red-400 text-[10px]">ULTRA</Badge>
-          </h2>
-          <p className="text-xs text-muted-foreground">Full site control. Use with extreme caution.</p>
-        </div>
-        <div className="ml-auto">
-          <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" /> Reload
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5 self-start">
+          <RefreshCw className="w-3.5 h-3.5" /> Reload
+        </Button>
       </div>
 
-      {/* Kill Switches */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Kill Switches Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Maintenance Mode */}
         <Card className={`border-0 ${isMaintenanceOn ? 'bg-gradient-to-br from-red-500/10 to-red-500/5 ring-1 ring-red-500/30' : 'bg-white/[0.02]'}`}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start sm:items-center justify-between mb-4 gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isMaintenanceOn ? 'bg-red-500/20' : 'bg-white/[0.05]'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isMaintenanceOn ? 'bg-red-500/20' : 'bg-white/[0.05]'}`}>
                   <Power className={`w-5 h-5 ${isMaintenanceOn ? 'text-red-400' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
@@ -205,8 +247,19 @@ export default function AdminSiteControl() {
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant={isMaintenanceOn ? 'destructive' : 'outline'} size="sm" className="gap-1.5">
-                    {isMaintenanceOn ? <><WifiOff className="w-3.5 h-3.5" /> ACTIVE</> : <><Wifi className="w-3.5 h-3.5" /> OFF</>}
+                  <Button 
+                    variant={isMaintenanceOn ? 'destructive' : 'outline'} 
+                    size="sm" 
+                    className="gap-1.5 flex-shrink-0"
+                    disabled={saving === 'maintenance_mode'}
+                  >
+                    {saving === 'maintenance_mode' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isMaintenanceOn ? (
+                      <><WifiOff className="w-3.5 h-3.5" /> ACTIVE</>
+                    ) : (
+                      <><Wifi className="w-3.5 h-3.5" /> OFF</>
+                    )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -236,6 +289,17 @@ export default function AdminSiteControl() {
               onChange={e => setMaintenanceMsg(e.target.value)}
               className="text-xs h-16 bg-black/20 border-white/10"
             />
+            {maintenanceMsg !== (settings.maintenance_mode?.message || '') && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => upsertSetting('maintenance_mode', { ...settings.maintenance_mode || { enabled: false }, message: maintenanceMsg })}
+                className="mt-2 h-7 text-xs"
+                disabled={saving === 'maintenance_mode'}
+              >
+                Save Message
+              </Button>
+            )}
             {isMaintenanceOn && (
               <div className="mt-2 flex items-center gap-2 text-[10px] text-red-400 animate-pulse">
                 <Flame className="w-3 h-3" /> SITE IS CURRENTLY OFFLINE
@@ -246,28 +310,39 @@ export default function AdminSiteControl() {
 
         {/* Site Lockdown */}
         <Card className={`border-0 ${isLockdownOn ? 'bg-gradient-to-br from-orange-500/10 to-orange-500/5 ring-1 ring-orange-500/30' : 'bg-white/[0.02]'}`}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start sm:items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isLockdownOn ? 'bg-orange-500/20' : 'bg-white/[0.05]'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isLockdownOn ? 'bg-orange-500/20' : 'bg-white/[0.05]'}`}>
                   {isLockdownOn ? <Lock className="w-5 h-5 text-orange-400" /> : <Unlock className="w-5 h-5 text-muted-foreground" />}
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-foreground">Site Lockdown</p>
-                  <p className="text-[10px] text-muted-foreground">Password-protect entire site</p>
+                  <p className="text-[10px] text-muted-foreground">Only admins can access the site</p>
                 </div>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant={isLockdownOn ? 'destructive' : 'outline'} size="sm" className="gap-1.5">
-                    {isLockdownOn ? <><Lock className="w-3.5 h-3.5" /> LOCKED</> : <><Unlock className="w-3.5 h-3.5" /> OPEN</>}
+                  <Button 
+                    variant={isLockdownOn ? 'destructive' : 'outline'} 
+                    size="sm" 
+                    className="gap-1.5 flex-shrink-0"
+                    disabled={saving === 'site_lockdown'}
+                  >
+                    {saving === 'site_lockdown' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isLockdownOn ? (
+                      <><Lock className="w-3.5 h-3.5" /> LOCKED</>
+                    ) : (
+                      <><Unlock className="w-3.5 h-3.5" /> OPEN</>
+                    )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{isLockdownOn ? 'Unlock Site?' : '🔒 Lock Down Site?'}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {isLockdownOn ? 'Site will be accessible to everyone again.' : 'Only authenticated admins can access the site.'}
+                      {isLockdownOn ? 'Site will be accessible to everyone again.' : 'Only authenticated admins can access the site. All other visitors will be blocked.'}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -280,7 +355,7 @@ export default function AdminSiteControl() {
               </AlertDialog>
             </div>
             {isLockdownOn && (
-              <div className="flex items-center gap-2 text-[10px] text-orange-400 animate-pulse">
+              <div className="mt-4 flex items-center gap-2 text-[10px] text-orange-400 animate-pulse">
                 <Shield className="w-3 h-3" /> SITE IS LOCKED — Only admins can enter
               </div>
             )}
@@ -289,10 +364,10 @@ export default function AdminSiteControl() {
 
         {/* Registration Control */}
         <Card className={`border-0 ${!isRegistrationOn ? 'bg-gradient-to-br from-purple-500/10 to-purple-500/5 ring-1 ring-purple-500/30' : 'bg-white/[0.02]'}`}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start sm:items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${!isRegistrationOn ? 'bg-purple-500/20' : 'bg-white/[0.05]'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${!isRegistrationOn ? 'bg-purple-500/20' : 'bg-white/[0.05]'}`}>
                   <UserX className={`w-5 h-5 ${!isRegistrationOn ? 'text-purple-400' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
@@ -302,8 +377,20 @@ export default function AdminSiteControl() {
                   </p>
                 </div>
               </div>
-              <Button variant={!isRegistrationOn ? 'destructive' : 'outline'} size="sm" onClick={toggleRegistration} className="gap-1.5">
-                {isRegistrationOn ? <><ToggleRight className="w-4 h-4" /> ON</> : <><ToggleLeft className="w-4 h-4" /> OFF</>}
+              <Button 
+                variant={!isRegistrationOn ? 'destructive' : 'outline'} 
+                size="sm" 
+                onClick={toggleRegistration} 
+                className="gap-1.5 flex-shrink-0"
+                disabled={saving === 'registration_enabled'}
+              >
+                {saving === 'registration_enabled' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isRegistrationOn ? (
+                  <><ToggleRight className="w-4 h-4" /> ON</>
+                ) : (
+                  <><ToggleLeft className="w-4 h-4" /> OFF</>
+                )}
               </Button>
             </div>
           </CardContent>
@@ -311,10 +398,10 @@ export default function AdminSiteControl() {
 
         {/* Announcement Banner */}
         <Card className={`border-0 ${isAnnouncementOn ? 'bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 ring-1 ring-cyan-500/30' : 'bg-white/[0.02]'}`}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start sm:items-center justify-between mb-3 gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isAnnouncementOn ? 'bg-cyan-500/20' : 'bg-white/[0.05]'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isAnnouncementOn ? 'bg-cyan-500/20' : 'bg-white/[0.05]'}`}>
                   {isAnnouncementOn ? <Volume2 className="w-5 h-5 text-cyan-400" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
                 </div>
                 <div>
@@ -322,8 +409,20 @@ export default function AdminSiteControl() {
                   <p className="text-[10px] text-muted-foreground">Show banner on all pages</p>
                 </div>
               </div>
-              <Button variant={isAnnouncementOn ? 'default' : 'outline'} size="sm" onClick={toggleAnnouncement} className="gap-1.5">
-                {isAnnouncementOn ? <><Bell className="w-3.5 h-3.5" /> LIVE</> : <><Bell className="w-3.5 h-3.5" /> OFF</>}
+              <Button 
+                variant={isAnnouncementOn ? 'default' : 'outline'} 
+                size="sm" 
+                onClick={toggleAnnouncement} 
+                className="gap-1.5 flex-shrink-0"
+                disabled={saving === 'announcement_banner'}
+              >
+                {saving === 'announcement_banner' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isAnnouncementOn ? (
+                  <><Bell className="w-3.5 h-3.5" /> LIVE</>
+                ) : (
+                  <><Bell className="w-3.5 h-3.5" /> OFF</>
+                )}
               </Button>
             </div>
             <div className="space-y-2">
@@ -345,7 +444,15 @@ export default function AdminSiteControl() {
                     <SelectItem value="danger">🔴 Danger</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" variant="outline" onClick={saveAnnouncement} className="h-8 text-xs">Save</Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={saveAnnouncement} 
+                  className="h-8 text-xs"
+                  disabled={saving === 'announcement_banner'}
+                >
+                  Save
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -354,21 +461,21 @@ export default function AdminSiteControl() {
 
       {/* IP Blacklist */}
       <Card className="border-0 bg-white/[0.02]">
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5">
           <div className="flex items-center gap-3 mb-4">
-            <Ban className="w-5 h-5 text-red-400" />
-            <div>
+            <Ban className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-foreground">IP Blacklist</p>
               <p className="text-[10px] text-muted-foreground">Block suspicious IP addresses from accessing the site</p>
             </div>
-            <Badge variant="outline" className="ml-auto text-[10px] border-red-500/20 text-red-400">
+            <Badge variant="outline" className="text-[10px] border-red-500/20 text-red-400 flex-shrink-0">
               {bannedIPs.filter(ip => ip.is_active).length} blocked
             </Badge>
           </div>
 
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <Input 
-              placeholder="Enter IP address (e.g. 192.168.1.1)" 
+              placeholder="IP address (e.g. 192.168.1.1)" 
               value={newIP} 
               onChange={e => setNewIP(e.target.value)}
               className="text-xs h-9 bg-black/20 border-white/10 font-mono flex-1"
@@ -379,28 +486,35 @@ export default function AdminSiteControl() {
               onChange={e => setNewIPReason(e.target.value)}
               className="text-xs h-9 bg-black/20 border-white/10 flex-1"
             />
-            <Button size="sm" variant="destructive" onClick={banIP} className="h-9 gap-1.5">
-              <Ban className="w-3.5 h-3.5" /> Block
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              onClick={banIP} 
+              className="h-9 gap-1.5"
+              disabled={saving === 'ban_ip'}
+            >
+              {saving === 'ban_ip' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />}
+              Block
             </Button>
           </div>
 
           <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
             {bannedIPs.length === 0 ? (
-              <p className="text-center text-muted-foreground text-sm py-6">No blocked IPs</p>
+              <p className="text-center text-muted-foreground text-sm py-6">No blocked IPs — all clear 🟢</p>
             ) : (
               bannedIPs.map(ip => (
                 <div key={ip.id} className={`flex items-center justify-between p-3 rounded-lg border ${
                   ip.is_active ? 'border-red-500/20 bg-red-500/[0.03]' : 'border-white/[0.03] bg-white/[0.01] opacity-50'
                 }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${ip.is_active ? 'bg-red-400 animate-pulse' : 'bg-gray-600'}`} />
-                    <div>
-                      <span className="font-mono text-sm text-foreground">{ip.ip_address}</span>
-                      {ip.reason && <p className="text-[10px] text-muted-foreground">{ip.reason}</p>}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${ip.is_active ? 'bg-red-400 animate-pulse' : 'bg-gray-600'}`} />
+                    <div className="min-w-0">
+                      <span className="font-mono text-sm text-foreground block truncate">{ip.ip_address}</span>
+                      {ip.reason && <p className="text-[10px] text-muted-foreground truncate">{ip.reason}</p>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground">{new Date(ip.created_at).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{new Date(ip.created_at).toLocaleDateString()}</span>
                     {ip.is_active && (
                       <Button size="sm" variant="ghost" onClick={() => unbanIP(ip.id, ip.ip_address)} className="h-7 text-xs text-emerald-400 hover:text-emerald-300">
                         Unblock
@@ -416,14 +530,14 @@ export default function AdminSiteControl() {
 
       {/* Active User Bans */}
       <Card className="border-0 bg-white/[0.02]">
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5">
           <div className="flex items-center gap-3 mb-4">
-            <UserX className="w-5 h-5 text-orange-400" />
-            <div>
+            <UserX className="w-5 h-5 text-orange-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-foreground">Active User Bans</p>
               <p className="text-[10px] text-muted-foreground">Currently suspended or banned users</p>
             </div>
-            <Badge variant="outline" className="ml-auto text-[10px] border-orange-500/20 text-orange-400">
+            <Badge variant="outline" className="text-[10px] border-orange-500/20 text-orange-400 flex-shrink-0">
               {userBans.length} active
             </Badge>
           </div>
@@ -432,15 +546,18 @@ export default function AdminSiteControl() {
               <p className="text-center text-muted-foreground text-sm py-6">No active bans — all clear 🟢</p>
             ) : (
               userBans.map(ban => (
-                <div key={ban.id} className="flex items-center justify-between p-3 rounded-lg border border-orange-500/20 bg-orange-500/[0.03]">
-                  <div>
+                <div key={ban.id} className="flex items-center justify-between p-3 rounded-lg border border-orange-500/20 bg-orange-500/[0.03] gap-2">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-foreground">{ban.user_id.slice(0, 8)}...</span>
-                      <Badge variant="destructive" className="text-[9px] h-4">{ban.ban_type}</Badge>
+                      <span className="font-mono text-xs text-foreground truncate">{ban.user_id.slice(0, 8)}...</span>
+                      <Badge variant="destructive" className="text-[9px] h-4 flex-shrink-0">{ban.ban_type}</Badge>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{ban.reason}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{ban.reason}</p>
+                    {ban.expires_at && (
+                      <p className="text-[9px] text-orange-400 mt-0.5">Expires: {new Date(ban.expires_at).toLocaleDateString()}</p>
+                    )}
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => liftUserBan(ban.id)} className="h-7 text-xs text-emerald-400">
+                  <Button size="sm" variant="ghost" onClick={() => liftUserBan(ban.id)} className="h-7 text-xs text-emerald-400 flex-shrink-0">
                     Lift Ban
                   </Button>
                 </div>
@@ -451,9 +568,9 @@ export default function AdminSiteControl() {
       </Card>
 
       {/* System Status Footer */}
-      <div className="flex items-center gap-4 p-3 rounded-lg bg-black/30 border border-white/[0.03]">
-        <Terminal className="w-4 h-4 text-emerald-400" />
-        <div className="flex gap-4 text-[10px] text-muted-foreground font-mono">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-3 rounded-lg bg-black/30 border border-white/[0.03]">
+        <Terminal className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground font-mono">
           <span>MAINTENANCE: <span className={isMaintenanceOn ? 'text-red-400' : 'text-emerald-400'}>{isMaintenanceOn ? 'ON' : 'OFF'}</span></span>
           <span>LOCKDOWN: <span className={isLockdownOn ? 'text-red-400' : 'text-emerald-400'}>{isLockdownOn ? 'ON' : 'OFF'}</span></span>
           <span>REGISTRATION: <span className={isRegistrationOn ? 'text-emerald-400' : 'text-red-400'}>{isRegistrationOn ? 'OPEN' : 'CLOSED'}</span></span>

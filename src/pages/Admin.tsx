@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import logo from '@/assets/indus-tours-logo.jpeg';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
@@ -8,6 +8,7 @@ import {
   Skull, BookOpen, Image, Gift, AlertTriangle, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminSession } from '@/hooks/useAdminSession';
@@ -91,14 +92,54 @@ const pageTitle: Record<string, string> = {
   'system-health': 'System Health',
 };
 
+// Swipe hook for mobile sidebar
+function useSwipeGesture(onSwipeRight: () => void, onSwipeLeft: () => void) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (!touchStart.current) return;
+    const deltaX = e.changedTouches[0].clientX - touchStart.current.x;
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
+    // Only trigger if horizontal swipe > 60px and not too vertical
+    if (Math.abs(deltaX) > 60 && deltaY < 100) {
+      if (deltaX > 0 && touchStart.current.x < 40) {
+        onSwipeRight(); // swipe right from left edge → open
+      } else if (deltaX < -60) {
+        onSwipeLeft(); // swipe left → close
+      }
+    }
+    touchStart.current = null;
+  }, [onSwipeRight, onSwipeLeft]);
+
+  useEffect(() => {
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchEnd]);
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   useAdminSession();
+
+  // Swipe gestures
+  useSwipeGesture(
+    useCallback(() => setMobileMenuOpen(true), []),
+    useCallback(() => setMobileMenuOpen(false), [])
+  );
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -131,7 +172,21 @@ export default function Admin() {
   const handleMenuClick = (id: string) => {
     setActiveMenu(id);
     setMobileMenuOpen(false);
+    setSearchQuery('');
   };
+
+  // Filter menu items based on search
+  const filteredMenuItems = searchQuery.trim()
+    ? menuItems.filter(item => 
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.group.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : menuItems;
+
+  const filteredGroups = groups.filter(group =>
+    filteredMenuItems.some(item => item.group === group)
+  );
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -198,11 +253,31 @@ export default function Admin() {
     );
   }
 
+  const SearchBar = () => (
+    <div className="relative flex-shrink-0 px-1 mb-3">
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
+      <Input
+        placeholder="Search sections..."
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        className="h-8 pl-8 pr-8 text-[12px] bg-white/[0.03] border-white/[0.06] text-gray-300 placeholder:text-gray-600 focus:border-primary/30 focus:bg-white/[0.05] rounded-lg"
+      />
+      {searchQuery && (
+        <button 
+          onClick={() => setSearchQuery('')}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+
   const SidebarNav = () => (
     <ScrollArea className="flex-1">
       <nav className="space-y-5 pr-1 pb-4">
-        {groups.map(group => {
-          const items = menuItems.filter(i => i.group === group);
+        {filteredGroups.map(group => {
+          const items = filteredMenuItems.filter(i => i.group === group);
           return (
             <div key={group}>
               <p className="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-semibold px-3 mb-2">{group}</p>
@@ -226,6 +301,9 @@ export default function Admin() {
             </div>
           );
         })}
+        {filteredMenuItems.length === 0 && (
+          <p className="text-center text-gray-600 text-xs py-8">No sections found</p>
+        )}
       </nav>
     </ScrollArea>
   );
@@ -236,7 +314,7 @@ export default function Admin() {
       <aside className="w-56 admin-sidebar hidden lg:flex flex-col fixed h-full z-30">
         <div className="flex flex-col h-full p-3">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-6 px-2 pt-1 flex-shrink-0">
+          <div className="flex items-center gap-3 mb-4 px-2 pt-1 flex-shrink-0">
             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/20 relative border-2 border-primary/30">
               <img src={logo} alt="Indus Tours" className="w-full h-full object-cover" />
               <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#060a16] animate-pulse" />
@@ -250,6 +328,7 @@ export default function Admin() {
             </div>
           </div>
 
+          <SearchBar />
           <SidebarNav />
 
           {/* Bottom Actions */}
@@ -271,7 +350,7 @@ export default function Admin() {
         <div className="lg:hidden fixed inset-0 z-50">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" 
             onClick={() => setMobileMenuOpen(false)} 
           />
           {/* Panel */}
@@ -300,8 +379,13 @@ export default function Admin() {
               </Button>
             </div>
 
+            {/* Search */}
+            <div className="px-3 pt-3">
+              <SearchBar />
+            </div>
+
             {/* Scrollable Nav */}
-            <div className="flex-1 overflow-hidden px-2 pt-3">
+            <div className="flex-1 overflow-hidden px-2">
               <SidebarNav />
             </div>
 
