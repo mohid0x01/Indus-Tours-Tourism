@@ -192,6 +192,16 @@ export default function Auth() {
           description: 'You have successfully logged in.',
         });
       } else {
+        // Check if registration is disabled
+        if (isRegistrationDisabled) {
+          toast({
+            title: 'Registration Closed',
+            description: 'New user registration is currently disabled by the administrator.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         const redirectUrl = `${window.location.origin}/`;
 
         const { error } = await supabase.auth.signUp({
