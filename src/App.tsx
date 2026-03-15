@@ -72,10 +72,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <VisitorTracker />
-            <AnimatedRoutes />
-            <WhatsAppButton />
-            <AIChatbot />
-            
+            <MaintenanceGate>
+              <AnimatedRoutes />
+              <WhatsAppButton />
+              <AIChatbot />
+            </MaintenanceGate>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
