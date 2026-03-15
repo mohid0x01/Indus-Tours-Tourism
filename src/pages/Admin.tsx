@@ -92,37 +92,59 @@ const pageTitle: Record<string, string> = {
   'system-health': 'System Health',
 };
 
-// Swipe hook for mobile sidebar
+// Swipe hook for mobile sidebar — only triggers on strong horizontal gestures from screen edge
 function useSwipeGesture(onSwipeRight: () => void, onSwipeLeft: () => void) {
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const swiping = useRef(false);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+    swiping.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!touchStart.current) return;
+    const deltaX = Math.abs(e.touches[0].clientX - touchStart.current.x);
+    const deltaY = Math.abs(e.touches[0].clientY - touchStart.current.y);
+    // If moving more vertically than horizontally, cancel swipe detection
+    if (deltaY > 15 && deltaY > deltaX) {
+      touchStart.current = null;
+      return;
+    }
+    if (deltaX > 20 && deltaX > deltaY * 1.5) {
+      swiping.current = true;
+    }
   }, []);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (!touchStart.current) return;
+    if (!touchStart.current || !swiping.current) {
+      touchStart.current = null;
+      return;
+    }
     const deltaX = e.changedTouches[0].clientX - touchStart.current.x;
-    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
-    // Only trigger if horizontal swipe > 60px and not too vertical
-    if (Math.abs(deltaX) > 60 && deltaY < 100) {
-      if (deltaX > 0 && touchStart.current.x < 40) {
-        onSwipeRight(); // swipe right from left edge → open
-      } else if (deltaX < -60) {
-        onSwipeLeft(); // swipe left → close
+    const elapsed = Date.now() - touchStart.current.time;
+    // Must complete within 400ms and travel 80px+
+    if (elapsed < 400 && Math.abs(deltaX) > 80) {
+      if (deltaX > 0 && touchStart.current.x < 30) {
+        onSwipeRight();
+      } else if (deltaX < -80) {
+        onSwipeLeft();
       }
     }
     touchStart.current = null;
+    swiping.current = false;
   }, [onSwipeRight, onSwipeLeft]);
 
   useEffect(() => {
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
     return () => {
       document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [handleTouchStart, handleTouchEnd]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 }
 
 export default function Admin() {

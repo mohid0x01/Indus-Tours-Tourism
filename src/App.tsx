@@ -10,6 +10,7 @@ import WhatsAppButton from "@/components/common/WhatsAppButton";
 import PageTransition from "@/components/common/PageTransition";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import AIChatbot from "@/components/common/AIChatbot";
+import MaintenanceGate from "@/components/common/MaintenanceGate";
 
 import Index from "./pages/Index";
 import Destinations from "./pages/Destinations";
@@ -71,10 +72,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <VisitorTracker />
-            <AnimatedRoutes />
-            <WhatsAppButton />
-            <AIChatbot />
-            
+            <MaintenanceGate>
+              <AnimatedRoutes />
+              <WhatsAppButton />
+              <AIChatbot />
+            </MaintenanceGate>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
