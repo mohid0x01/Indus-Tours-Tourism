@@ -54,8 +54,8 @@ export default function MaintenanceGate({ children }: MaintenanceGateProps) {
   // Don't block until we've checked
   if (!checked || authLoading) return <>{children}</>;
 
-  // Admins bypass maintenance
-  if (isMaintenanceOn && !isAdmin) {
+  // Admins and exempt routes bypass maintenance
+  if (isMaintenanceOn && !isAdmin && !isExemptRoute) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#030508] via-[#0a0f1e] to-[#030508] flex items-center justify-center p-6">
         <div className="max-w-lg w-full text-center space-y-8">
