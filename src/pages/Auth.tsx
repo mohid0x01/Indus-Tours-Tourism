@@ -19,6 +19,8 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAdmin, isLoading: authLoading } = useAuth();
+  const siteSettings = useSiteSettings();
+  const isRegistrationDisabled = siteSettings.registration_enabled?.enabled === false;
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
