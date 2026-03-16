@@ -123,12 +123,18 @@ export default function Booking() {
     setFormData(prev => ({ ...prev, dealCode: '' }));
   };
 
+  const { format } = useCurrency();
   const selectedTour = tours.find((t) => t.id === formData.tour);
   const basePrice = selectedTour ? selectedTour.discount_price || selectedTour.price : 0;
   const discountPercent = selectedDeal?.discount_percent || 0;
-  const discountedPrice = discountPercent > 0 ? basePrice * (1 - discountPercent / 100) : basePrice;
-  const totalPrice = discountedPrice * parseInt(formData.travelers || '1');
-  const originalPrice = basePrice * parseInt(formData.travelers || '1');
+  const travelersNum = parseInt(formData.travelers || '1');
+  const groupDiscount = getGroupDiscount(travelersNum);
+  const dynamicPricing = useDynamicPricing(formData.tour || null, basePrice, travelersNum, formData.date);
+  const priceAfterDynamic = dynamicPricing.finalPrice;
+  const priceAfterDeal = discountPercent > 0 ? priceAfterDynamic * (1 - discountPercent / 100) : priceAfterDynamic;
+  const priceAfterGroup = groupDiscount > 0 ? priceAfterDeal * (1 - groupDiscount / 100) : priceAfterDeal;
+  const totalPrice = priceAfterGroup * travelersNum;
+  const originalPrice = basePrice * travelersNum;
   const isPakistani = formData.nationality.toLowerCase().includes('pakistan');
 
   const handleSubmit = async (e: React.FormEvent) => {
