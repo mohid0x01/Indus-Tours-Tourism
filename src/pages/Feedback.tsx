@@ -72,8 +72,24 @@ export default function Feedback() {
         toast({ title: 'Error', description: 'Failed to submit feedback.', variant: 'destructive' });
         return;
       }
+
+      // Upload photos if any
+      if (photos.length > 0 && data) {
+        for (const photo of photos) {
+          const ext = photo.name.split('.').pop();
+          const path = `${(data as any)[0]?.id || Date.now()}/${Date.now()}.${ext}`;
+          const { data: uploaded } = await supabase.storage.from('review-photos').upload(path, photo);
+          if (uploaded) {
+            const url = supabase.storage.from('review-photos').getPublicUrl(uploaded.path).data.publicUrl;
+            await supabase.from('review_photos').insert({ feedback_id: (data as any)[0]?.id, image_url: url });
+          }
+        }
+      }
+
       toast({ title: 'Thank You!', description: 'Your feedback has been submitted successfully.' });
       setFormData({ name: '', email: '', tour: '', rating: 0, feedback: '' });
+      setPhotos([]);
+      setPhotoPreviews([]);
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
     } finally {
