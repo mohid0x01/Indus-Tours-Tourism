@@ -371,19 +371,35 @@ export default function Booking() {
 
                     {selectedTour && (
                       <div className="p-4 sm:p-6 rounded-xl bg-primary/10 border border-primary/20">
+                        {dynamicPricing.appliedRules.length > 0 && (
+                          <div className="space-y-1 mb-2">
+                            {dynamicPricing.appliedRules.map((r, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs">
+                                <Tag className="w-3 h-3 text-primary" />
+                                <span className="text-muted-foreground">{r.name}: <span className={r.adjustment < 0 ? 'text-emerald-500' : 'text-destructive'}>{r.adjustment > 0 ? '+' : ''}{r.adjustment}%</span></span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {selectedDeal && discountPercent > 0 && (
                           <div className="flex items-center gap-2 mb-2 text-sm">
                             <Tag className="w-4 h-4 text-accent" />
-                            <span className="text-accent font-medium">{discountPercent}% discount applied!</span>
+                            <span className="text-accent font-medium">{discountPercent}% deal discount!</span>
+                          </div>
+                        )}
+                        {groupDiscount > 0 && (
+                          <div className="flex items-center gap-2 mb-2 text-sm">
+                            <Users className="w-4 h-4 text-primary" />
+                            <span className="text-primary font-medium">{groupDiscount}% group discount!</span>
                           </div>
                         )}
                         <div className="flex justify-between items-center">
                           <span className="text-foreground font-medium">Estimated Total:</span>
                           <div className="text-right">
-                            {selectedDeal && discountPercent > 0 && (
-                              <span className="text-sm text-muted-foreground line-through mr-2">PKR {Math.round(originalPrice).toLocaleString()}</span>
+                            {totalPrice < originalPrice && (
+                              <span className="text-sm text-muted-foreground line-through mr-2">{format(originalPrice)}</span>
                             )}
-                            <span className="text-xl sm:text-2xl font-bold text-primary">PKR {Math.round(totalPrice).toLocaleString()}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-primary">{format(totalPrice)}</span>
                           </div>
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-2">* Final price will be confirmed after booking</p>
