@@ -317,7 +317,8 @@ export default function Dashboard() {
     return { totalSpent, completed, upcoming, travelers, total: bookings.length, avgRating, reviews: feedbacks.length };
   }, [bookings, feedbacks]);
 
-  const tierLabel = stats.completed >= 10 ? 'Platinum Traveler' : stats.completed >= 5 ? 'Gold Traveler' : stats.completed >= 2 ? 'Silver Traveler' : 'Explorer';
+  const loyaltyPoints = bookings.reduce((s, b) => s + (b.status === 'completed' ? 100 : 0), 0);
+  const tierLabel = stats.completed >= 20 ? 'Platinum Traveler' : stats.completed >= 10 ? 'Gold Traveler' : stats.completed >= 5 ? 'Silver Traveler' : stats.completed >= 2 ? 'Bronze Traveler' : 'Explorer';
 
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
