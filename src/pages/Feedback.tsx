@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Star, Send, MessageSquare, Loader2, Sparkles } from 'lucide-react';
+import { Star, Send, MessageSquare, Loader2, Sparkles, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,23 @@ export default function Feedback() {
   });
   const [hoveredRating, setHoveredRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 5 - photos.length);
+    setPhotos(prev => [...prev, ...files]);
+    files.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = () => setPhotoPreviews(prev => [...prev, reader.result as string]);
+      reader.readAsDataURL(f);
+    });
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== idx));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
+  };
 
   useEffect(() => {
     const fetchTours = async () => {
@@ -41,7 +58,7 @@ export default function Feedback() {
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('feedback').insert({
+      const { data: insertedData, error } = await supabase.from('feedback').insert({
         user_id: user?.id || null,
         name: formData.name,
         email: formData.email,
@@ -49,13 +66,30 @@ export default function Feedback() {
         rating: formData.rating,
         message: formData.feedback,
         is_approved: false,
-      });
+      }).select('id');
       if (error) {
         toast({ title: 'Error', description: 'Failed to submit feedback.', variant: 'destructive' });
         return;
       }
+
+      // Upload photos if any
+      const feedbackId = insertedData?.[0]?.id;
+      if (photos.length > 0 && feedbackId) {
+        for (const photo of photos) {
+          const ext = photo.name.split('.').pop();
+          const path = `${feedbackId}/${Date.now()}.${ext}`;
+          const { data: uploaded } = await supabase.storage.from('review-photos').upload(path, photo);
+          if (uploaded) {
+            const url = supabase.storage.from('review-photos').getPublicUrl(uploaded.path).data.publicUrl;
+            await supabase.from('review_photos').insert({ feedback_id: feedbackId, image_url: url });
+          }
+        }
+      }
+
       toast({ title: 'Thank You!', description: 'Your feedback has been submitted successfully.' });
       setFormData({ name: '', email: '', tour: '', rating: 0, feedback: '' });
+      setPhotos([]);
+      setPhotoPreviews([]);
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
     } finally {
@@ -159,6 +193,29 @@ export default function Feedback() {
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Your Feedback *</label>
                   <Textarea required rows={5} value={formData.feedback} onChange={(e) => setFormData({ ...formData, feedback: e.target.value })} placeholder="Tell us about your experience..." />
+                </div>
+
+                {/* Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Add Photos (optional)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {photoPreviews.map((src, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < 5 && (
+                      <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                        <Camera className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
+                        <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">Up to 5 photos</p>
                 </div>
 
                 <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting || formData.rating === 0}>

@@ -684,6 +684,62 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_rules: {
+        Row: {
+          created_at: string | null
+          days_before_travel: number | null
+          discount_percent: number | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          max_group_size: number | null
+          min_group_size: number | null
+          name: string
+          rule_type: string
+          start_date: string | null
+          surcharge_percent: number | null
+          tour_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          days_before_travel?: number | null
+          discount_percent?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_group_size?: number | null
+          min_group_size?: number | null
+          name: string
+          rule_type?: string
+          start_date?: string | null
+          surcharge_percent?: number | null
+          tour_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          days_before_travel?: number | null
+          discount_percent?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_group_size?: number | null
+          min_group_size?: number | null
+          name?: string
+          rule_type?: string
+          start_date?: string | null
+          surcharge_percent?: number | null
+          tour_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -748,6 +804,42 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_photos: {
+        Row: {
+          created_at: string | null
+          feedback_id: string
+          id: string
+          image_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_id: string
+          id?: string
+          image_url: string
+        }
+        Update: {
+          created_at?: string | null
+          feedback_id?: string
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_photos_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_photos_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_public"
             referencedColumns: ["id"]
           },
         ]

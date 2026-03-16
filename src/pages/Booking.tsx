@@ -12,6 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { dealsApi } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
+import { useDynamicPricing } from '@/hooks/useDynamicPricing';
+import GroupBookingSection, { getGroupDiscount } from '@/components/tours/GroupBookingSection';
 
 interface Tour {
   id: string;
@@ -120,12 +123,18 @@ export default function Booking() {
     setFormData(prev => ({ ...prev, dealCode: '' }));
   };
 
+  const { format } = useCurrency();
   const selectedTour = tours.find((t) => t.id === formData.tour);
   const basePrice = selectedTour ? selectedTour.discount_price || selectedTour.price : 0;
   const discountPercent = selectedDeal?.discount_percent || 0;
-  const discountedPrice = discountPercent > 0 ? basePrice * (1 - discountPercent / 100) : basePrice;
-  const totalPrice = discountedPrice * parseInt(formData.travelers || '1');
-  const originalPrice = basePrice * parseInt(formData.travelers || '1');
+  const travelersNum = parseInt(formData.travelers || '1');
+  const groupDiscount = getGroupDiscount(travelersNum);
+  const dynamicPricing = useDynamicPricing(formData.tour || null, basePrice, travelersNum, formData.date);
+  const priceAfterDynamic = dynamicPricing.finalPrice;
+  const priceAfterDeal = discountPercent > 0 ? priceAfterDynamic * (1 - discountPercent / 100) : priceAfterDynamic;
+  const priceAfterGroup = groupDiscount > 0 ? priceAfterDeal * (1 - groupDiscount / 100) : priceAfterDeal;
+  const totalPrice = priceAfterGroup * travelersNum;
+  const originalPrice = basePrice * travelersNum;
   const isPakistani = formData.nationality.toLowerCase().includes('pakistan');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -270,7 +279,7 @@ export default function Booking() {
                         <option value="">Select a tour...</option>
                         {tours.map((tour) => (
                           <option key={tour.id} value={tour.id}>
-                            {tour.title} - PKR {(tour.discount_price || tour.price).toLocaleString()}
+                            {tour.title} - {format(tour.discount_price || tour.price)}
                           </option>
                         ))}
                       </select>
@@ -353,21 +362,42 @@ export default function Booking() {
                       </div>
                     </div>
 
+                    {/* Group Booking Discounts */}
+                    {travelersNum >= 5 && (
+                      <GroupBookingSection travelers={travelersNum} onTravelersChange={(n) => setFormData({ ...formData, travelers: String(n) })} />
+                    )}
+
                     {selectedTour && (
                       <div className="p-4 sm:p-6 rounded-xl bg-primary/10 border border-primary/20">
+                        {dynamicPricing.appliedRules.length > 0 && (
+                          <div className="space-y-1 mb-2">
+                            {dynamicPricing.appliedRules.map((r, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs">
+                                <Tag className="w-3 h-3 text-primary" />
+                                <span className="text-muted-foreground">{r.name}: <span className={r.adjustment < 0 ? 'text-emerald-500' : 'text-destructive'}>{r.adjustment > 0 ? '+' : ''}{r.adjustment}%</span></span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {selectedDeal && discountPercent > 0 && (
                           <div className="flex items-center gap-2 mb-2 text-sm">
                             <Tag className="w-4 h-4 text-accent" />
-                            <span className="text-accent font-medium">{discountPercent}% discount applied!</span>
+                            <span className="text-accent font-medium">{discountPercent}% deal discount!</span>
+                          </div>
+                        )}
+                        {groupDiscount > 0 && (
+                          <div className="flex items-center gap-2 mb-2 text-sm">
+                            <Users className="w-4 h-4 text-primary" />
+                            <span className="text-primary font-medium">{groupDiscount}% group discount!</span>
                           </div>
                         )}
                         <div className="flex justify-between items-center">
                           <span className="text-foreground font-medium">Estimated Total:</span>
                           <div className="text-right">
-                            {selectedDeal && discountPercent > 0 && (
-                              <span className="text-sm text-muted-foreground line-through mr-2">PKR {Math.round(originalPrice).toLocaleString()}</span>
+                            {totalPrice < originalPrice && (
+                              <span className="text-sm text-muted-foreground line-through mr-2">{format(originalPrice)}</span>
                             )}
-                            <span className="text-xl sm:text-2xl font-bold text-primary">PKR {Math.round(totalPrice).toLocaleString()}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-primary">{format(totalPrice)}</span>
                           </div>
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-2">* Final price will be confirmed after booking</p>

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import CurrencyToggle from '@/components/common/CurrencyToggle';
 import logo from '@/assets/indus-tours-logo.jpeg';
 
 const navLinks = [
@@ -133,6 +134,7 @@ const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
 
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-2">
+            <CurrencyToggle scrolled={scrolledOrNotHome} />
             <button
               onClick={toggleTheme}
               className={cn(

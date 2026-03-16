@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Users, Clock, Star, Search, Loader2, Hotel } from 'lucide-react';
+import { Users, Clock, Star, Search, Loader2, Hotel, CalendarDays } from 'lucide-react';
 import TourComparison from '@/components/tours/TourComparison';
+import TourAvailabilityCalendar from '@/components/tours/TourAvailabilityCalendar';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { getTourImage } from '@/lib/tourImages';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface HotelInfo {
   id: string;
@@ -36,6 +38,8 @@ export default function Tours() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [expandedCalendar, setExpandedCalendar] = useState<string | null>(null);
+  const { format } = useCurrency();
 
   useEffect(() => {
     const fetchTours = async () => {
@@ -213,20 +217,35 @@ export default function Tours() {
                       <div>
                         <div className="flex items-baseline gap-2">
                           <span className="text-xl md:text-2xl font-bold text-foreground">
-                            PKR {(tour.discount_price || tour.price).toLocaleString()}
+                            {format(tour.discount_price || tour.price)}
                           </span>
                           {tour.discount_price && tour.discount_price < tour.price && (
                             <span className="text-xs md:text-sm text-muted-foreground line-through">
-                              {tour.price.toLocaleString()}
+                              {format(tour.price)}
                             </span>
                           )}
                         </div>
                         <p className="text-[11px] text-muted-foreground/70">per person</p>
                       </div>
-                      <Button variant="default" size="sm" asChild className="shadow-teal hover:shadow-lg transition-shadow">
-                        <Link to={`/booking?tour=${tour.id}`}>Book Now</Link>
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedCalendar(expandedCalendar === tour.id ? null : tour.id)}
+                          className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                          title="Check availability"
+                        >
+                          <CalendarDays className="w-4 h-4" />
+                        </button>
+                        <Button variant="default" size="sm" asChild className="shadow-teal hover:shadow-lg transition-shadow">
+                          <Link to={`/booking?tour=${tour.id}`}>Book Now</Link>
+                        </Button>
+                      </div>
                     </div>
+
+                    {expandedCalendar === tour.id && (
+                      <div className="mt-3 animate-fade-up">
+                        <TourAvailabilityCalendar tourId={tour.id} />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
