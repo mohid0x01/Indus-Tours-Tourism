@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Star, Send, MessageSquare, Loader2, Sparkles } from 'lucide-react';
+import { Star, Send, MessageSquare, Loader2, Sparkles, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
