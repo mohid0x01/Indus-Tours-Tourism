@@ -195,6 +195,29 @@ export default function Feedback() {
                   <Textarea required rows={5} value={formData.feedback} onChange={(e) => setFormData({ ...formData, feedback: e.target.value })} placeholder="Tell us about your experience..." />
                 </div>
 
+                {/* Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Add Photos (optional)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {photoPreviews.map((src, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < 5 && (
+                      <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                        <Camera className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground mt-1">Upload</span>
+                        <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">Up to 5 photos</p>
+                </div>
+
                 <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting || formData.rating === 0}>
                   {isSubmitting ? (
                     <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</>
