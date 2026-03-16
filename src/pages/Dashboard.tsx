@@ -432,6 +432,8 @@ export default function Dashboard() {
 
             {/* ─── BOOKINGS ─── */}
             <TabsContent value="bookings" className="space-y-6 animate-fade-up">
+              {/* Loyalty Tier */}
+              <LoyaltyTierCard completedTrips={stats.completed} totalPoints={loyaltyPoints} />
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-serif font-bold text-foreground">Your Bookings</h2>
