@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { CurrencyProvider } from "@/hooks/useCurrency";
 import WhatsAppButton from "@/components/common/WhatsAppButton";
 import PageTransition from "@/components/common/PageTransition";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
@@ -27,6 +28,7 @@ import Gallery from "./pages/Gallery";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import ItineraryBuilder from "./pages/ItineraryBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +56,7 @@ function AnimatedRoutes() {
         <Route path="/feedback" element={<PageTransition><Feedback /></PageTransition>} />
         <Route path="/blog" element={<PageTransition><Blog /></PageTransition>} />
         <Route path="/gallery" element={<PageTransition><Gallery /></PageTransition>} />
+        <Route path="/itinerary-builder" element={<PageTransition><ItineraryBuilder /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
@@ -67,18 +70,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <VisitorTracker />
-            <SiteGate>
-              <AnimatedRoutes />
-              <WhatsAppButton />
-              <AIChatbot />
-            </SiteGate>
-          </BrowserRouter>
-        </TooltipProvider>
+        <CurrencyProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <VisitorTracker />
+              <SiteGate>
+                <AnimatedRoutes />
+                <WhatsAppButton />
+                <AIChatbot />
+              </SiteGate>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CurrencyProvider>
       </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>

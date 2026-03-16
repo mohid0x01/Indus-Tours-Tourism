@@ -134,6 +134,7 @@ const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
 
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-2">
+            <CurrencyToggle scrolled={scrolledOrNotHome} />
             <button
               onClick={toggleTheme}
               className={cn(
