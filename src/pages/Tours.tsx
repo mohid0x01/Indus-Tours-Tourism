@@ -38,6 +38,8 @@ export default function Tours() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [expandedCalendar, setExpandedCalendar] = useState<string | null>(null);
+  const { format } = useCurrency();
 
   useEffect(() => {
     const fetchTours = async () => {
