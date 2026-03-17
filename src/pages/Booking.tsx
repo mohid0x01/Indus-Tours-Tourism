@@ -64,7 +64,11 @@ export default function Booking() {
   useEffect(() => {
     fetchTours();
     fetchDeals();
-  }, []);
+    // Autofill from profile
+    if (user) {
+      autofillFromProfile();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (tourIdParam && tours.length > 0) {
