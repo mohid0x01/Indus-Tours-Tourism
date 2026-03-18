@@ -152,6 +152,21 @@ export default function Booking() {
   const originalPrice = basePrice * travelersNum;
   const isPakistani = formData.nationality.toLowerCase().includes('pakistan');
 
+  // Track abandoned booking on unmount if form started but not submitted
+  const formStarted = formData.tour || formData.name || formData.email;
+  useEffect(() => {
+    return () => {
+      if (formStarted && step < 4 && user) {
+        supabase.from('abandoned_bookings').insert({
+          user_id: user.id,
+          email: formData.email || user.email,
+          tour_id: formData.tour || null,
+          form_data: { name: formData.name, phone: formData.phone, date: formData.date, travelers: formData.travelers, step },
+        }).then(() => {});
+      }
+    };
+  }, []); // intentionally empty - capture on unmount
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -176,6 +191,17 @@ export default function Booking() {
       if (error) {
         toast({ title: 'Error', description: error.message || 'Failed to submit booking.', variant: 'destructive' });
         return;
+      }
+      // Award loyalty points
+      if (user) {
+        await supabase.from('loyalty_points').insert({
+          user_id: user.id,
+          points: 100,
+          action: 'booking',
+          description: `Earned 100 pts for booking ${selectedTour?.title || 'a tour'}`,
+        });
+        // Mark any abandoned bookings for this user as recovered
+        await supabase.from('abandoned_bookings').update({ recovered: true }).eq('user_id', user.id).eq('recovered', false);
       }
       toast({ title: 'Booking Request Submitted!', description: 'We will contact you within 24 hours to confirm your booking.' });
       setStep(4);

@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Users, Loader2, Star, Filter, Search, Shield, Clock, Fuel, ChevronDown } from 'lucide-react';
+import { Users, Loader2, Star, Filter, Search, Shield, Clock, Fuel, ChevronDown, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { getVehicleImage } from '@/lib/vehicleImages';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface Vehicle {
   id: string;
