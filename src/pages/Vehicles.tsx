@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Users, Loader2, Star, Filter, Search, Shield, Clock, Fuel, ChevronDown } from 'lucide-react';
+import { Users, Loader2, Star, Filter, Search, Shield, Clock, Fuel, ChevronDown, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { getVehicleImage } from '@/lib/vehicleImages';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface Vehicle {
   id: string;
@@ -30,6 +32,8 @@ export default function Vehicles() {
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'capacity'>('price-asc');
   const [compareList, setCompareList] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
+  const { format } = useCurrency();
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -267,6 +271,12 @@ export default function Vehicles() {
                       >
                         {compareList.includes(vehicle.id) ? '✓' : 'VS'}
                       </button>
+                      <button
+                        onClick={() => setDetailVehicle(vehicle)}
+                        className="absolute top-3 md:top-4 right-14 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-all"
+                      >
+                        <Eye className="w-4 h-4 text-foreground" />
+                      </button>
                     </div>
 
                     <div className="p-4 md:p-6 space-y-3 md:space-y-4">
@@ -314,6 +324,28 @@ export default function Vehicles() {
           )}
         </div>
       </section>
+
+      {/* Vehicle Detail Popup */}
+      <Dialog open={!!detailVehicle} onOpenChange={() => setDetailVehicle(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-serif">{detailVehicle?.name}</DialogTitle></DialogHeader>
+          {detailVehicle && (
+            <div className="space-y-4">
+              <img src={getVehicleImage(detailVehicle.name, detailVehicle.image_url)} alt={detailVehicle.name} className="w-full h-48 object-cover rounded-xl" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground">Type</p><p className="font-medium text-foreground">{detailVehicle.type}</p></div>
+                <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground">Capacity</p><p className="font-medium text-foreground">{detailVehicle.capacity} passengers</p></div>
+                <div className="p-3 rounded-xl bg-primary/10"><p className="text-xs text-muted-foreground">Price</p><p className="font-bold text-primary">{format(detailVehicle.price_per_day)}/day</p></div>
+                <div className="p-3 rounded-xl bg-emerald-500/10"><p className="text-xs text-muted-foreground">Status</p><p className="font-medium text-emerald-500">Available</p></div>
+              </div>
+              {detailVehicle.features && detailVehicle.features.length > 0 && (
+                <div><p className="text-sm font-medium text-foreground mb-2">Features</p><div className="flex flex-wrap gap-1.5">{detailVehicle.features.map(f => <span key={f} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">{f}</span>)}</div></div>
+              )}
+              <Button variant="gold" className="w-full" asChild><Link to={`/booking?vehicle=${detailVehicle.id}`}>Book This Vehicle</Link></Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

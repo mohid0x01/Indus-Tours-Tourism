@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { MapPin, ArrowRight, Loader2, Calendar, Compass } from 'lucide-react';
+import { MapPin, ArrowRight, Loader2, Calendar, Compass, Eye } from 'lucide-react';
 import WeatherWidget from '@/components/common/WeatherWidget';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { getDestinationImage } from '@/lib/destinationImages';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Destination {
   id: string;
@@ -22,6 +23,7 @@ interface Destination {
 export default function Destinations() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [detailDest, setDetailDest] = useState<Destination | null>(null);
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -78,13 +80,16 @@ export default function Destinations() {
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className={index % 2 === 1 ? 'md:order-2' : ''}>
-                    <div className="relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] shadow-lg group ultra-card">
+                    <div className="relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] shadow-lg group ultra-card cursor-pointer" onClick={() => setDetailDest(dest)}>
                       <img
                         src={getDestinationImage(dest.name, dest.image_url)}
                         alt={dest.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-mountain/60 to-transparent" />
+                      <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye className="w-4 h-4 text-foreground" />
+                      </div>
                       {dest.is_featured && (
                         <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6">
                           <span className="px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-accent text-accent-foreground text-xs md:text-sm font-medium shadow-gold">
@@ -106,7 +111,7 @@ export default function Destinations() {
                     </h2>
                     <div className="gold-divider mb-4" />
                     {dest.description && (
-                      <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 leading-relaxed">
+                      <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 leading-relaxed line-clamp-3">
                         {dest.description}
                       </p>
                     )}
@@ -125,11 +130,14 @@ export default function Destinations() {
 
                     {dest.highlights && dest.highlights.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6">
-                        {dest.highlights.map((h) => (
+                        {dest.highlights.slice(0, 4).map((h) => (
                           <span key={h} className="px-2.5 md:px-3 py-1 md:py-1.5 rounded-full bg-primary/8 text-primary text-xs md:text-sm border border-primary/10">
                             {h}
                           </span>
                         ))}
+                        {dest.highlights.length > 4 && (
+                          <button onClick={() => setDetailDest(dest)} className="px-2.5 py-1 text-xs text-primary font-medium">+{dest.highlights.length - 4} more</button>
+                        )}
                       </div>
                     )}
 
@@ -139,12 +147,17 @@ export default function Destinations() {
                       </div>
                     )}
 
-                    <Button variant="default" asChild className="shadow-teal hover:shadow-lg transition-shadow group">
-                      <Link to="/tours" className="flex items-center gap-2">
-                        Explore Tours
-                        <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
-                      </Link>
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button variant="default" asChild className="shadow-teal hover:shadow-lg transition-shadow group">
+                        <Link to="/tours" className="flex items-center gap-2">
+                          Explore Tours
+                          <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </Button>
+                      <Button variant="outline" onClick={() => setDetailDest(dest)}>
+                        <Eye className="w-4 h-4 mr-2" /> Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -152,6 +165,38 @@ export default function Destinations() {
           )}
         </div>
       </section>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!detailDest} onOpenChange={() => setDetailDest(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-serif">{detailDest?.name}</DialogTitle></DialogHeader>
+          {detailDest && (
+            <div className="space-y-4">
+              <img src={getDestinationImage(detailDest.name, detailDest.image_url)} alt={detailDest.name} className="w-full h-48 object-cover rounded-xl" />
+              {detailDest.location && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-4 h-4 text-primary" />{detailDest.location}</div>
+              )}
+              {detailDest.description && <p className="text-sm text-muted-foreground leading-relaxed">{detailDest.description}</p>}
+              {detailDest.best_time && (
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-xs text-muted-foreground">Best Time to Visit</p>
+                  <p className="font-medium text-foreground">{detailDest.best_time}</p>
+                </div>
+              )}
+              {detailDest.highlights && detailDest.highlights.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Highlights</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detailDest.highlights.map(h => <span key={h} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">{h}</span>)}
+                  </div>
+                </div>
+              )}
+              <WeatherWidget location={detailDest.name} />
+              <Button variant="gold" className="w-full" asChild><Link to="/tours">Browse Tours in {detailDest.name}</Link></Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
