@@ -32,6 +32,8 @@ export default function Vehicles() {
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'capacity'>('price-asc');
   const [compareList, setCompareList] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
+  const { format } = useCurrency();
 
   useEffect(() => {
     const fetchVehicles = async () => {
