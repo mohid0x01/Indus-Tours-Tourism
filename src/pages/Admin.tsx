@@ -57,6 +57,7 @@ const menuItems = [
   { id: 'vehicles', icon: Car, label: 'Vehicles', group: 'Manage' },
   { id: 'hotels', icon: Hotel, label: 'Hotels', group: 'Manage' },
   { id: 'deals', icon: Tag, label: 'Deals & Offers', group: 'Manage' },
+  { id: 'cms', icon: Palette, label: 'CMS', group: 'Content' },
   { id: 'blog', icon: BookOpen, label: 'Blog Posts', group: 'Content' },
   { id: 'gallery', icon: Image, label: 'Photo Gallery', group: 'Content' },
   { id: 'feedback', icon: MessageSquare, label: 'Feedback', group: 'Engagement' },
