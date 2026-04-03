@@ -23,6 +23,7 @@ import AdminHotels from '@/components/admin/AdminHotels';
 import AdminDeals from '@/components/admin/AdminDeals';
 import AdminFeedback from '@/components/admin/AdminFeedback';
 import AdminContent from '@/components/admin/AdminContent';
+import AdminCMS from '@/components/admin/AdminCMS';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
