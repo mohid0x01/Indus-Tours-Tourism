@@ -88,6 +88,7 @@ const groups = ['Overview', 'Manage', 'Content', 'Engagement', 'Revenue', 'Intel
 
 const pageTitle: Record<string, string> = {
   content: 'Content Editor',
+  cms: 'Content Management System',
   activity: 'Activity Logs',
   visitors: 'Visitor Logs',
   seo: 'SEO Settings',
