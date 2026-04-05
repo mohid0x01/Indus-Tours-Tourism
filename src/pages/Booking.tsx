@@ -445,7 +445,7 @@ export default function Booking() {
                       </div>
                     )}
 
-                    <Button variant="gold" size="lg" className="w-full" onClick={() => setStep(2)} disabled={!formData.date}>Continue</Button>
+                    <Button variant="gold" size="lg" className="w-full" onClick={() => setStep(2)} disabled={!formData.tour || !formData.date}>Continue</Button>
                   </div>
                 )}
               </div>
