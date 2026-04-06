@@ -154,35 +154,7 @@ export default function Tours() {
         </div>
       </section>
 
-      {/* Detail Popup */}
-      <Dialog open={!!detailTour} onOpenChange={() => setDetailTour(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">{detailTour?.title}</DialogTitle></DialogHeader>
-          {detailTour && (
-            <div className="space-y-4">
-              <img src={getTourImage(detailTour.title, detailTour.image_url)} alt={detailTour.title} className="w-full h-48 object-cover rounded-xl" />
-              {detailTour.description && <p className="text-sm text-muted-foreground leading-relaxed">{detailTour.description}</p>}
-              <div className="grid grid-cols-2 gap-3">
-                {detailTour.duration && <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground">Duration</p><p className="font-medium text-foreground">{detailTour.duration}</p></div>}
-                {detailTour.difficulty && <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground">Difficulty</p><p className="font-medium text-foreground">{detailTour.difficulty}</p></div>}
-                {detailTour.max_group_size && <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground">Max Group</p><p className="font-medium text-foreground">{detailTour.max_group_size} people</p></div>}
-                <div className="p-3 rounded-xl bg-primary/10"><p className="text-xs text-muted-foreground">Price</p><p className="font-bold text-primary">{format(detailTour.discount_price || detailTour.price)}/person</p></div>
-              </div>
-              {detailTour.includes && detailTour.includes.length > 0 && (
-                <div><p className="text-sm font-medium text-foreground mb-2">What's Included</p><div className="flex flex-wrap gap-1.5">{detailTour.includes.map(inc => <span key={inc} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">{inc}</span>)}</div></div>
-              )}
-              {detailTour.hotels && (
-                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <p className="text-xs text-muted-foreground">Accommodation</p>
-                  <p className="font-medium text-foreground">{detailTour.hotels.name}</p>
-                  {detailTour.hotels.star_rating && <div className="flex gap-0.5 mt-1">{Array.from({ length: detailTour.hotels.star_rating }).map((_, i) => <Star key={i} className="w-3 h-3 fill-accent text-accent" />)}</div>}
-                </div>
-              )}
-              <Button variant="gold" className="w-full" asChild><Link to={`/booking?tour=${detailTour.id}`}>Book This Tour</Link></Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <TourDetailDialog tour={detailTour} onClose={() => setDetailTour(null)} />
 
       <Footer />
     </div>
