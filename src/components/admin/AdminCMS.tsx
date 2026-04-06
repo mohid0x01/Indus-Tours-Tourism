@@ -189,6 +189,7 @@ export default function AdminCMS() {
           <TabsTrigger value="contact" className="gap-1.5 text-xs"><Phone className="w-3.5 h-3.5" /> Contact</TabsTrigger>
           <TabsTrigger value="social" className="gap-1.5 text-xs"><Globe className="w-3.5 h-3.5" /> Social</TabsTrigger>
           <TabsTrigger value="policies" className="gap-1.5 text-xs"><FileText className="w-3.5 h-3.5" /> Policies</TabsTrigger>
+          <TabsTrigger value="team" className="gap-1.5 text-xs"><Users className="w-3.5 h-3.5" /> Team</TabsTrigger>
           <TabsTrigger value="alerts" className="gap-1.5 text-xs"><AlertCircle className="w-3.5 h-3.5" /> Alerts</TabsTrigger>
         </TabsList>
 
