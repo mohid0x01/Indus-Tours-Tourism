@@ -396,6 +396,46 @@ export default function AdminCMS() {
           ))}
         </TabsContent>
 
+        {/* Team */}
+        <TabsContent value="team" className="space-y-4">
+          <Card className="border-0 shadow-card">
+            <CardContent className="p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-[10px]">Team Members (About Page)</Badge>
+                <Button variant="outline" size="sm" onClick={() => setTeamMembers(prev => [...prev, { name: '', role: '', initials: '', desc: '' }])} className="gap-1">
+                  <Plus className="w-3.5 h-3.5" /> Add Member
+                </Button>
+              </div>
+              {teamMembers.map((member, i) => (
+                <div key={i} className="p-4 bg-muted/30 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Member {i + 1}</span>
+                    {teamMembers.length > 1 && (
+                      <Button variant="ghost" size="sm" onClick={() => setTeamMembers(prev => prev.filter((_, j) => j !== i))} className="text-destructive h-7 w-7 p-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Name</label>
+                      <Input value={member.name} onChange={e => setTeamMembers(prev => prev.map((m, j) => j === i ? { ...m, name: e.target.value, initials: e.target.value.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() } : m))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Role</label>
+                      <Input value={member.role} onChange={e => setTeamMembers(prev => prev.map((m, j) => j === i ? { ...m, role: e.target.value } : m))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block">Description</label>
+                    <Input value={member.desc} onChange={e => setTeamMembers(prev => prev.map((m, j) => j === i ? { ...m, desc: e.target.value } : m))} />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Alerts */}
         <TabsContent value="alerts" className="space-y-4">
           <Card className="border-0 shadow-card">
