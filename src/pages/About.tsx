@@ -43,6 +43,30 @@ const timeline = [
 ];
 
 export default function About() {
+  const [teamMembers, setTeamMembers] = useState([
+    { name: 'Shahzaib Khan Mughal', role: 'Founder & CEO', img: founderImage, initials: '', desc: 'Visionary leader with a passion for showcasing Pakistan\'s beauty' },
+    { name: 'Mohid Mughal', role: 'Head of Operations', img: null as string | null, initials: 'MM', desc: 'Ensuring smooth operations and customer satisfaction' },
+  ]);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      const { data } = await supabase.from('site_content').select('key, value').in('key', ['team_members']);
+      if (data && data.length > 0) {
+        const teamData = data.find(d => d.key === 'team_members');
+        if (teamData && Array.isArray(teamData.value)) {
+          setTeamMembers(teamData.value.map((m: any) => ({
+            name: m.name || '',
+            role: m.role || '',
+            img: m.img || null,
+            initials: m.initials || m.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '',
+            desc: m.desc || '',
+          })));
+        }
+      }
+    };
+    fetchTeam();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
