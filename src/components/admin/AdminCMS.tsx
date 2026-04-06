@@ -127,6 +127,13 @@ export default function AdminCMS() {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'key' });
       }
+      // Save team members
+      await supabase.from('site_content').upsert({
+        key: 'team_members',
+        value: teamMembers as any,
+        updated_by: user?.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
       setLastSaved(new Date().toLocaleTimeString());
       toast({ title: '✅ Content Saved', description: 'All changes published to the website.' });
     } catch {
