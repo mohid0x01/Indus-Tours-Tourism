@@ -105,7 +105,9 @@ export default function AdminCMS() {
     if (!error && data) {
       const contentObj = { ...defaultContent };
       data.forEach((item) => {
-        if (item.key in contentObj) {
+        if (item.key === 'team_members' && Array.isArray(item.value)) {
+          setTeamMembers(item.value as any[]);
+        } else if (item.key in contentObj) {
           (contentObj as any)[item.key] = item.value;
         }
       });
