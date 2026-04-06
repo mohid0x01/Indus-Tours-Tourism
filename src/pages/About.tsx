@@ -301,11 +301,7 @@ export default function About() {
           </motion.div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
-            {[
-              { name: 'Shahzaib Khan Mughal', role: 'Founder & CEO', img: founderImage, initials: '', desc: 'Visionary leader with a passion for showcasing Pakistan\'s beauty' },
-              { name: 'Ahmed Raza', role: 'Head of Operations', img: null, initials: 'AR', desc: 'Ensuring smooth operations and customer satisfaction' },
-              { name: 'Fatima Ali', role: 'Customer Relations', img: null, initials: 'FA', desc: 'Dedicated to making every traveler feel at home' },
-            ].map((member, i) => (
+            {teamMembers.map((member, i) => (
               <motion.div
                 key={member.name}
                 className="text-center ultra-card p-6 rounded-2xl bg-card group"
