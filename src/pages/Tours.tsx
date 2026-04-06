@@ -12,7 +12,7 @@ import { getTourImage } from '@/lib/tourImages';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import TourDetailDialog from '@/components/tours/TourDetailDialog';
 
 interface HotelInfo { id: string; name: string; star_rating: number | null; }
 interface Tour { id: string; title: string; description: string | null; duration: string | null; price: number; discount_price: number | null; max_group_size: number | null; difficulty: string | null; includes: string[] | null; image_url: string | null; is_featured: boolean; hotel_id: string | null; hotels: HotelInfo | null; }
