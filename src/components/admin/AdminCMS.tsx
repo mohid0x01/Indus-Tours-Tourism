@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Globe, Phone, Mail, MapPin, AlertCircle, Eye, Palette, Layout, FileText, Image, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, Globe, Phone, Mail, MapPin, AlertCircle, Eye, Palette, Layout, FileText, Image, RefreshCw, CheckCircle2, Users, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
