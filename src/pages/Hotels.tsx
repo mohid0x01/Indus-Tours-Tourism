@@ -160,7 +160,7 @@ export default function Hotels() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.4, delay: i * 0.05 }}
                     className="bg-card rounded-2xl sm:rounded-3xl overflow-hidden shadow-card hover:shadow-xl transition-all duration-300 group ultra-card cursor-pointer"
-                    onClick={() => setExpandedHotel(expandedHotel === hotel.id ? null : hotel.id)}
+                    onClick={() => setDetailHotel(hotel)}
                   >
                     {/* Image */}
                     <div className="relative h-48 sm:h-56 overflow-hidden">
