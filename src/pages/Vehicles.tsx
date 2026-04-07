@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { getVehicleImage } from '@/lib/vehicleImages';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import VehicleDetailDialog from '@/components/vehicles/VehicleDetailDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface Vehicle {
