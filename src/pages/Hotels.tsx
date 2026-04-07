@@ -241,6 +241,8 @@ export default function Hotels() {
         </div>
       </section>
 
+      <HotelDetailDialog hotel={detailHotel} onClose={() => setDetailHotel(null)} />
+
       <Footer />
     </div>
   );
