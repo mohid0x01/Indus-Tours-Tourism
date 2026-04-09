@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { Award, Heart, Target, Shield, Star, MapPin, Users, Calendar, ChevronRight } from 'lucide-react';
 import heroImage from '@/assets/hero-hunza.jpg';
 import founderImage from '@/assets/founder-shahzaib.jpeg';
-import ImageOps from '@/assets/Operation-Mohid.jpeg'
+import ImageOps from '@/assets/Operations-Mohid.jpeg'
 import { motion, useInView } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
