@@ -4,6 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { Award, Heart, Target, Shield, Star, MapPin, Users, Calendar, ChevronRight } from 'lucide-react';
 import heroImage from '@/assets/hero-hunza.jpg';
 import founderImage from '@/assets/founder-shahzaib.jpeg';
+import ImageOps from '@/assets/Operation-Mohid.jpeg'
 import { motion, useInView } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,7 +46,7 @@ const timeline = [
 export default function About() {
   const [teamMembers, setTeamMembers] = useState([
     { name: 'Shahzaib Khan Mughal', role: 'Founder & CEO', img: founderImage, initials: '', desc: 'Visionary leader with a passion for showcasing Pakistan\'s beauty' },
-    { name: 'Mohid Mughal', role: 'Head of Operations', img: null as string | null, initials: 'MM', desc: 'Ensuring smooth operations and customer satisfaction' },
+    { name: 'Mohid Mughal', role: 'Head of Operations', img: ImageOps, initials: '', desc: 'Ensuring smooth operations and customer satisfaction' },
   ]);
 
   useEffect(() => {
